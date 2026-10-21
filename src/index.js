@@ -11,6 +11,17 @@ export default {
   },
 };
 
+// Cleans the key in case it was pasted with "export GEMINI_API_KEY=", quotes or spaces.
+function getKey(env) {
+  const raw = String(env.GEMINI_API_KEY || env.GOOGLE_API_KEY || env.GEMINI_KEY || "");
+  const key = raw.trim().replace(/^export\s+\w+\s*=\s*/i, "").replace(/^\w+\s*=\s*/, "").replace(/^["']+|["']+$/g, "").trim();
+  let problem = "";
+  if (!raw) problem = "No secret named GEMINI_API_KEY exists on this Worker.";
+  else if (key !== raw) problem = "The value had extra characters (quotes, spaces, export or a name=). The server cleaned them, but please paste only the key.";
+  else if (/\s/.test(key)) problem = "The key contains spaces. Paste only the key.";
+  return { key, problem };
+}
+
 async function handle(req, env) {
   const cors = {
     "Access-Control-Allow-Origin": env.ALLOWED_ORIGIN || "*",
@@ -20,9 +31,10 @@ async function handle(req, env) {
   const reply = (o, s = 200) =>
     new Response(JSON.stringify(o), { status: s, headers: { ...cors, "Content-Type": "application/json" } });
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
-  if (req.method === "GET") return reply({ ok: true, keyConfigured: !!env.GEMINI_API_KEY, rateLimitStore: !!env.RATE });
+  const K = getKey(env);
+  if (req.method === "GET") return reply({ ok: true, keyConfigured: !!K.key, keyLength: K.key.length, keyProblem: K.problem, envNames: Object.keys(env), rateLimitStore: !!env.RATE });
   if (req.method !== "POST") return reply({ error: "POST only" }, 405);
-  if (!env.GEMINI_API_KEY) return reply({ error: "The server has no GEMINI_API_KEY secret yet." }, 500);
+  if (!K.key) return reply({ error: "The server has no GEMINI_API_KEY secret yet." }, 500);
   const b = await req.json().catch(() => ({}));
   if (!b.text || String(b.text).length > 8000) return reply({ error: "Bad request" }, 400);
   if (b.img && b.img.length > 2500000) return reply({ error: "Image too large" }, 413);
@@ -48,7 +60,7 @@ async function handle(req, env) {
     `https://generativelanguage.googleapis.com/v1beta/models/${env.MODEL || "gemini-2.5-flash"}:generateContent`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": K.key },
       body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: b.json ? { responseMimeType: "application/json" } : {} }),
     }
   );

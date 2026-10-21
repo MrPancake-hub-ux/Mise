@@ -406,7 +406,7 @@ const HELP=`**Here’s what I can do**
 - “undo” reverses the last change
 - Deletes ask for a yes or no first`;
 const MTG=[["quick",/quick|fast|speedy|15 min/],["hp",/protein/],["lc",/low.?carb|keto/],["prep",/meal.?prep|batch/],["budget",/cheap|budget|inexpensive/],["nocook",/no.?cook|cold|raw/],["onepan",/one.?(pan|pot)|sheet/],["spicy",/spicy|hot /],["comfort",/comfort/],["asian",/asian|stir.?fry|teriyaki/],["mex",/mexican|taco|burrito/],["med",/mediterranean|greek/],["ital",/italian|pasta/],["ind",/indian|curry/],["amer",/american|burger/]];
-function reply(q){const L=q.trim().toLowerCase().replace(/[’‘]/g,"'");let m;const pc=pendCheck(L);if(pc)return pc;if(/^undo( that| last| it)?$/.test(L)){if(!U.length)return"There’s nothing to undo.";Object.assign(S,JSON.parse(U.pop()));return"Undone. ↩️"}
+function reply(q,dfr){const L=q.trim().toLowerCase().replace(/[’‘]/g,"'");let m;const pc=pendCheck(L);if(pc)return pc;if(/^undo( that| last| it)?$/.test(L)){if(!U.length)return"There’s nothing to undo.";Object.assign(S,JSON.parse(U.pop()));return"Undone. ↩️"}
 if(/^(hi|hello|hey|yo|good (morning|afternoon|evening))\b/.test(L))return`Hi ${S.user.n}! What can I organise for you? Say “help” for ideas.`;
 if(/^(thanks|thank you|thx|cheers|ta)\b/.test(L))return"Any time! 💪";
 if(/^(help|what can you do|commands)\b/.test(L))return HELP;
@@ -468,7 +468,7 @@ if(/\b(volume|how much (have i |did i )?lift)/.test(L)){const w=S.hist.filter(h=
 const sg=/\b(suggest|recommend|idea|ideas|what should i (?:eat|cook|have|make)|what can i (?:eat|cook|make)|hungry|something (?:to eat|healthy|quick|tasty)|breakfast|lunch|dinner|snack|recipe|meal)\b/.test(L);
 if(/\b(left|remaining|eaten|so far|consumed|how (?:many|much))\b.*\b(calorie|calories|kcal|protein|macros?)\b/.test(L)&&!sg){const t=tgt(),e=eaten(TD());return`Eaten today: ${R(e.k)} kcal · P${R(e.p)} C${R(e.c)} F${R(e.f)}.\nTarget: ${t.k} kcal · P${t.p} C${t.c} F${t.f}.\nLeft: ${R(Math.max(0,t.k-e.k))} kcal, ${R(Math.max(0,t.p-e.p))}g protein.`}
 if(!sg&&/\b(macro|macros|target|calorie|calories|kcal|protein)\b/.test(L)){const t=tgt(),m_=dayMac(di(TD()));return`Daily target: ${t.k} kcal, ${t.p}g protein (2 g/kg), ${t.c}g carbs, ${t.f}g fat.\nPlanned today: ${R(m_.k)} kcal, P${R(m_.p)} C${R(m_.c)} F${R(m_.f)}.`}
-if(sg){const ty=/breakfast|brekkie|morning/.test(L)?"b":/snack/.test(L)?"s":/lunch|dinner|supper|main/.test(L)?"m":"all",tags=MTG.filter(a=>a[1].test(L)).map(a=>a[0]),req=[];if(/\bvegan\b/.test(L))req.push("vegan");else if(/\bvegetarian|veggie\b/.test(L))req.push("vegetarian");if(/gluten.?free/.test(L))req.push("gf");if(/dairy.?free|lactose.?free/.test(L))req.push("df");if(/nut.?free/.test(L))req.push("nf");if(/egg.?free/.test(L))req.push("ef");
+if(sg&&!dfr){const ty=/breakfast|brekkie|morning/.test(L)?"b":/snack/.test(L)?"s":/lunch|dinner|supper|main/.test(L)?"m":"all",tags=MTG.filter(a=>a[1].test(L)).map(a=>a[0]),req=[];if(/\bvegan\b/.test(L))req.push("vegan");else if(/\bvegetarian|veggie\b/.test(L))req.push("vegetarian");if(/gluten.?free/.test(L))req.push("gf");if(/dairy.?free|lactose.?free/.test(L))req.push("df");if(/nut.?free/.test(L))req.push("nf");if(/egg.?free/.test(L))req.push("ef");
 const hm=L.match(/\b(?:with|using|i have|i've got|got)\s+(?!for\b)(.+?)(?:\s+(?:for|that|which)\b.*)?$/),have=hm?hm[1].split(/\s*(?:,|\band\b)\s*/).map(w=>w.replace(/^(some|a|an|the)\s+/,"").replace(/s$/,"").trim()).filter(w=>w.length>2):[];
 const r=findMeals({t:ty,tags,req,have}).slice(0,3);if(!r.length)return"Nothing in the database matches all of that with your diet. Try fewer filters.";lastSug=r.map(o=>o.x);return"**Here are "+r.length+" ideas for you**\n\n"+r.map((o,i)=>`**${i+1}. ${o.m[0]}**\n- ⏱ ${o.m[5]} min · ${R(o.s.m.k)} kcal · P${R(o.s.m.p)} C${R(o.s.m.c)} F${R(o.s.m.f)}\n- Ingredients: ${o.s.i.map(a=>a.g+"g "+SHORT(a.f)).join(", ")}\n- ${o.m[2]}`).join("\n\n")+"\n\nSay “recipe 1” for the full method, “save 1” to keep it, or “add 2 to list” for shopping."}
 return null}
@@ -512,19 +512,29 @@ r=await fetch(a.base.replace(/\/$/,"")+"/chat/completions",{method:"POST",header
 function saveAI(){const g=i=>$(i)?$(i).value.trim():"";S.ai=Object.assign(S.ai,{key:$("ai_key")?g("ai_key"):S.ai.key,model:$("ai_model")?g("ai_model"):S.ai.model,base:$("ai_base")?g("ai_base"):S.ai.base,proxy:$("ai_proxy")?g("ai_proxy"):S.ai.proxy});toast("AI settings saved");go()}
 async function checkAI(){const L=[];toast("Checking AI…");if(!DEF_PROXY){await probeAI();if(!DEF_PROXY&&!aiOK()){aiStat=probeMsg;return go()}}try{const u=DEF_PROXY||(S.ai.p=="proxy"?S.ai.proxy:"");if(u){const h=await fetch(u).then(r=>r.json());L.push(h.ok?"Server reachable ✓":"Server replied oddly ✗");L.push(h.keyConfigured?"API key set on server ✓":"No API key on the server ✗")}const t=await aiCall("Reply with the single word OK.");L.push("AI replied “"+String(t).trim().slice(0,20)+"” ✓")}catch(e){L.push(aiErrMsg(e))}aiStat=L.join(" · ");go()}
 async function testAI(){saveAI();if(!aiOK())return toast("Fill in the connection details first");toast("Testing…");try{const t=await aiCall("Reply with the single word OK.");toast("✅ Connected: "+String(t).trim().slice(0,30))}catch(e){toast(aiErrMsg(e).slice(0,120))}}
-async function askAI(q){const u=S.user,p=`You are Mise’s in-app assistant (nutrition, meals, workouts, shopping, calendar). Today is ${new Date().toDateString()} (${TD()}).
-User: ${JSON.stringify({name:u.n,age:u.a,height_cm:u.h,weight_kg:u.w,goal:u.g,diet:u.diet,dislikes:u.dis,targets:R2(tgt())})}.
-Eaten today: ${JSON.stringify(R2(eaten(TD())))}. Upcoming events: ${JSON.stringify(S.events.filter(e=>e.d>=TD()).slice(0,10))}.
-Recent chat:
-${S.chat.slice(-8,-1).map(c=>c.r+": "+c.t).join("\n")}
-Answer helpfully in under 120 words using safe, evidence-based advice (suggest a professional for medical concerns). You may ask the app to make changes by listing commands in the exact phrasing it understands, for example "schedule dentist on friday at 3pm", "add eggs and milk to my list", "I ate 150g chicken breast", "drank 250ml water", "build me a push workout with dumbbells". You can also include commands like "high protein dinner ideas" to show recipes from the app’s recipe book. Never include delete, remove, clear or cancel commands.
-Reply ONLY with JSON: {"say":"text for the user","commands":["..."]}
-User message: ${q}`,txt=await aiCall(p,null,true);let j;try{j=pj(txt)}catch(e){return String(txt).trim()}let out=String(j.say||"");(j.commands||[]).filter(c=>typeof c=="string"&&!/\b(delete|remove|clear|reset|cancel|undo)\b/i.test(c)).slice(0,4).forEach(c=>{try{const r=reply(c);if(r)out+="\n✓ "+r}catch(e){}});return out||"Done."}
+async function askAI(q,mode){const u=S.user,pr=mode=="prep",td=TD(),plan=SL.map(k=>{const r=S.recipes.find(x=>x.id==S.plan[di(td)+k]);return r?k+": "+r.n:null}).filter(Boolean),
+H=(pr?S.pchat:S.chat).filter(c=>c.t!=="…"),hist=(H.length&&H[H.length-1].r=="u"?H.slice(0,-1):H).slice(-8).map(c=>(c.r=="u"?"User: ":"Assistant: ")+String(c.t).slice(0,500)).join("\n"),
+p=`You are Mise, a friendly, expert ${pr?"meal-prep coach":"nutrition, fitness and organisation assistant"} inside a health app. Today is ${new Date().toDateString()} (${td}).
+USER: ${JSON.stringify({name:u.n,age:u.a,height_cm:u.h,weight_kg:u.w,sex:u.s,goal:u.g,diet:u.diet,dislikes_or_allergies:u.dis,daily_targets:R2(tgt())})}
+TODAY: eaten so far ${JSON.stringify(R2(eaten(td)))}; water ${S.water[td]||0} ml; planned meals: ${plan.join("; ")||"none"}; pantry: ${S.pantry.join(", ")||"not set"}.
+UPCOMING EVENTS: ${JSON.stringify(S.events.filter(e=>e.d>=td).slice(0,8))}
+RECENT WORKOUTS: ${JSON.stringify(S.hist.slice(-3).map(h=>({date:h.d,name:h.n,sets:h.sets.length})))}
+SAVED RECIPES: ${S.recipes.slice(-8).map(r=>r.n).join(", ")||"none"}. PREP BATCHES: ${S.batches.map(bTxt).join("; ")||"none"}.
+RECENT CHAT:
+${hist||"(none)"}
+HOW TO ANSWER
+- Be specific and practical and use the user's own numbers. Respect their diet and allergies strictly. Give safe, evidence-based advice, and suggest a doctor or dietitian for medical concerns, very low calorie intakes, eating disorders or injuries.
+- Format exactly like this: one short opening sentence, then sections that each start with a **bold heading** line followed by lines beginning with "- ". Use numbered lines (1. 2. 3.) only for steps. No tables, no # headings, under 160 words.
+- The app can act through "commands". Write each command exactly like the examples below. The app runs them and shows the result after your text, so describe the action plainly (for example "Adding eggs to your list.") and never claim something is already done. For any recipe or meal idea request ALWAYS include a command such as "high protein dinner ideas" so the app shows real recipes with exact macros. Never include delete, remove, clear, cancel or reset commands.
+COMMANDS THE APP UNDERSTANDS
+${pr?PH:HELP}
+Reply ONLY with JSON: {"say":"your answer in the format above","commands":["command 1"]}
+USER MESSAGE: ${q}`,txt=await aiCall(p,null,true);let j;try{j=pj(txt)}catch(e){return String(txt).trim()}let out=String(j.say||"");(j.commands||[]).filter(c=>typeof c=="string"&&!/\b(delete|remove|clear|reset|cancel|undo)\b/i.test(c)).slice(0,4).forEach(c=>{try{const r=pr?prepReply(c):reply(c);if(r)out+="\n\n"+(r.includes("\n")?r:"✓ "+r)}catch(e){}});return out||"Done."}
 function ask(t){$("cq").value=t;say()}
 const SNAP=["events","lists","water","recipes","plan","ps","user","theme","routines","flog","batches","pantry","xp"];
 async function say(){const q=v("cq").trim();if(!q||busy)return;if(!/^undo\b/i.test(q)){const o={};SNAP.forEach(k=>o[k]=S[k]);U.push(JSON.stringify(o));if(U.length>10)U.shift()}
-S.chat.push({r:"u",t:q});let a=null;try{a=reply(q)}catch(e){a="Sorry, I couldn’t work that out. Try rephrasing, or say “help”."}
-if(a==null){if(aiOK()){if(!chatLeft())a=`You’ve used all ${tier().chat} AI chats for this hour (resets in ${resetMin()} min). The built-in commands still work. Say “help” to see them.`;else{S.use.chat.push(Date.now());S.chat.push({r:"a",t:"…"});busy=1;go();try{a=await askAI(q)}catch(e){S.use.chat.pop();a=aiErrMsg(e)}busy=0;S.chat.pop()}}else a="I didn’t catch that.\n\n"+HELP}
+S.chat.push({r:"u",t:q});const useAI=aiOK()&&chatLeft()>0;let a=null;try{a=reply(q,useAI)}catch(e){a="Sorry, I couldn’t work that out. Try rephrasing, or say “help”."}
+if(a==null){if(useAI){S.use.chat.push(Date.now());S.chat.push({r:"a",t:"…"});busy=1;go();try{a=await askAI(q)}catch(e){S.use.chat.pop();let l=null;try{l=reply(q,false)}catch(_){}a=l!=null?l:aiErrMsg(e)}busy=0;S.chat.pop()}else a=aiOK()?`You’ve used all ${tier().chat} AI chats for this hour (resets in ${resetMin()} min). The built-in commands still work. Say “help” to see them.`:"I didn’t catch that.\n\n"+HELP}
 S.chat.push({r:"a",t:a});S.chat=S.chat.slice(-40);go()}
 /* ---------- food log ---------- */
 const eaten=d=>{const r={k:0,p:0,c:0,f:0};(S.flog[d]||[]).forEach(e=>{r.k+=e.k;r.p+=e.p;r.c+=e.c;r.f+=e.f});return r};
@@ -582,7 +592,9 @@ if(lastPrep.length&&(m=L.match(/^(?:prep|batch|cook|make)\s+(?:#|option\s+|numbe
 if(m=L.match(/\b(?:one batch|batch for the week|prep for the week|week of (?:lunches|dinners|meals)|meal.?prep (?:my |the )?week|batch (?:lunches|dinners|meals))\b/)){const two=/(lunch(?:es)? and dinner|two meals|2 meals|lunches and dinners)/.test(L),r=pickPrep(/breakfast/.test(L)?"b":"m",2);if(!r.length)return"No prep-friendly meals fit your diet.";const nn=(L.match(/(\d+)\s*(?:days?|lunches|dinners|meals|servings)/)||[])[1];return made(two&&r[1]?[r[0].x,r[1].x]:[r[0].x],+nn||(/week/.test(L)?7:5))}
 if(m=L.match(/\b(?:prep|batch|cook|make)\s+(.+?)\s+(?:for|x|×)\s*(\d+)/)){const ws=m[1].replace(/\b(a|an|the|some|my)\b/g," ").trim().split(/\s+/).filter(Boolean);let r=findMeals({q:ws.join(" ")});if(!r.length&&ws.length>1)r=findMeals({q:ws[ws.length-1]});if(!r.length)return"I couldn’t find “"+m[1]+"” in the meal database. Say “what should I prep?” for ideas.";return made([r[0].x],+m[2])}
 return PH}
-function psay(){const q=v("pq").trim();if(!q)return;S.pchat.push({r:"u",t:q});let a;try{a=prepReply(q)}catch(e){a="Sorry, I couldn’t work that out. Say “help”."}S.pchat.push({r:"a",t:a});S.pchat=S.pchat.slice(-30);go();const c=$("pc");if(c)c.scrollTop=c.scrollHeight}
+async function psay(){const q=v("pq").trim();if(!q||busy)return;S.pchat.push({r:"u",t:q});let a;try{a=prepReply(q)}catch(e){a="Sorry, I couldn’t work that out. Say “help”."}
+if(a===PH&&!/^(help|what can you do|commands)\b/i.test(q)&&aiOK()&&chatLeft()>0){S.use.chat.push(Date.now());S.pchat.push({r:"a",t:"…"});busy=1;go();try{a=await askAI(q,"prep")}catch(e){S.use.chat.pop();a=aiErrMsg(e)}busy=0;S.pchat.pop()}
+S.pchat.push({r:"a",t:a});S.pchat=S.pchat.slice(-30);go();const c=$("pc");if(c)c.scrollTop=c.scrollHeight}
 function pbuild(){const a=+v("pb1"),b=v("pb2"),n=+v("pbn")||5,ms=[a].concat(b!==""?[+b]:[]);const r=mkBatch(ms,n);if(!r)return toast("Your "+tier().n+" tier holds "+tier().batch+" saved batch. Delete it, or level up to unlock more.");toast("Batch created");go()}
 function pauto(){const r=pickPrep("m",2);if(!r.length)return toast("No prep-friendly meals fit your diet");const b=mkBatch(r.map(o=>o.x),5);if(!b)return toast("Your "+tier().n+" tier holds "+tier().batch+" saved batch.");toast("Batch created");go()}
 V.prep=()=>{const opts=t=>MEALS.map((m,x)=>[m,x]).filter(a=>a[0][1]==t&&scaled(a[0])).map(a=>`<option value="${a[1]}">${esc(a[0][0])}</option>`).join("");
@@ -616,7 +628,7 @@ async function probeAI(){if(typeof location=="undefined"||!/^https?:/.test(locat
 try{const r=await fetch("/api/ai");if(!r.ok){probeMsg="No server found at /api/ai (status "+r.status+"). The files src/index.js and wrangler.jsonc are probably not deployed yet.";return}
 let h;try{h=await r.json()}catch(e){probeMsg="/api/ai returned a web page instead of data. The server file (src/index.js) isn’t deployed yet.";return}
 if(!h||!h.ok){probeMsg="/api/ai answered, but not in the expected way.";return}
-if(!h.keyConfigured){probeMsg="Server found, but the secret GEMINI_API_KEY is missing or misspelled (Step 5).";return}
+if(!h.keyConfigured){probeMsg="Server found, but it can’t see a usable GEMINI_API_KEY secret. "+(h.keyProblem||"")+(h.envNames?" Names it can see: "+h.envNames.join(", ")+".":"");return}
 DEF_PROXY="/api/ai";probeMsg="Server found and the key is set ✓"}catch(e){probeMsg="Couldn’t reach /api/ai from this address (blocked or offline). If you are viewing this inside Claude, outside requests are blocked: open your own .workers.dev address instead."}}
 try{probeAI().then(()=>{if(DEF_PROXY&&!/INPUT|SELECT/.test(document.activeElement.tagName))go()})}catch(e){}
 setInterval(tickN,3e4);try{if("serviceWorker" in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register("sw.js").catch(()=>{})}catch(e){}
