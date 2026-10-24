@@ -6,16 +6,17 @@ const kc=(f,g)=>({k:f.k*g/100,p:f.p*g/100,c:f.c*g/100,f:f.f*g/100});
 const MTN=Object.fromEntries(MT);
 
 /* ======================= FOOD DIARY ======================= */
-V.food=()=>{const d=fdte,t=tgt(),e=eaten(d),ent=S.flog[d]||[],left=t.k-e.k;
+V.food=()=>{const d=fdte,t=tgt(),e=eaten(d),ent=S.flog[d]||[],left=t.k-e.k+burnOf(d);
  return `<div class="row nw tight"><button class="ibtn" onclick="fdte=dAdd(fdte,-1);go()" aria-label="Previous day">${ic("chevL")}</button><h2 class="grow tc">${d==TD()?"Today":d==dAdd(TD(),-1)?"Yesterday":fd(d)}</h2><button class="ibtn" onclick="fdte=dAdd(fdte,1);go()" ${d>=TD()?"disabled":""} aria-label="Next day">${ic("chevR")}</button></div>
- <div class="card gap"><div class="eq"><div><b>${t.k}</b><span>Goal</span></div><i>−</i><div><b>${R(e.k)}</b><span>Food</span></div><i>=</i><div class="lf"><b style="${left<0?"color:var(--rd)":""}">${R(Math.abs(left))}</b><span>${left<0?"Over":"Left"}</span></div></div><div class="bar2 gap ${left<0?"over":""}"><div style="width:${Math.min(100,e.k/t.k*100)}%"></div></div><div class="gap">${macBar("Protein",e.p,t.p,"var(--ac2)")}${macBar("Carbs",e.c,t.c,"var(--wa)")}${macBar("Fat",e.f,t.f,"#7b6cf6")}</div></div>
+ <div class="card gap"><div class="eq"><div><b>${t.k}</b><span>Goal</span></div><i>−</i><div><b>${R(e.k)}</b><span>Food</span></div><i>+</i><div><b>${R(burnOf(d))}</b><span>Exercise</span></div><i>=</i><div class="lf"><b style="${left<0?"color:var(--rd)":""}">${R(Math.abs(left))}</b><span>${left<0?"Over":"Left"}</span></div></div><div class="bar2 gap ${left<0?"over":""}"><div style="width:${Math.min(100,e.k/(t.k+burnOf(d))*100)}%"></div></div><div class="gap">${macBar("Protein",e.p,t.p,"var(--ac2)")}${macBar("Carbs",e.c,t.c,"var(--wa)")}${macBar("Fat",e.f,t.f,"#7b6cf6")}</div></div>
  <div class="qa" style="grid-template-columns:repeat(4,1fr)"><button onclick="openFoodSearch()">${ic("search",24)}Search food</button><button onclick="aiLogOpen()">${ic("mic",24)}Say or type it</button><button onclick="photoOpen()">${ic("camera",24)}Photo</button><button onclick="quickAdd()">${ic("plus",24)}Quick add</button></div>
  ${MT.map(m=>{const L=ent.filter(x=>x.mt==m[0]),kk=L.reduce((a,x)=>a+x.k,0);return `<div class="card"><div class="meal-h"><h3>${m[1]}</h3><span class="kc">${R(kk)} kcal</span><button class="ibtn sm soft" onclick="openFoodSearch('${m[0]}')" aria-label="Add food to ${m[1]}">${ic("plus",18)}</button></div>${L.map(x=>`<div class="item"><div class="tx"><div class="t">${x.s=="photo"?ic("camera",14)+" ":x.s=="assistant"?ic("sparkles",14)+" ":""}${esc(x.n)}</div><div class="s">P${x.p} · C${x.c} · F${x.f}</div></div><div class="r">${x.k}<span class="mut sm-t"> kcal</span></div><button class="ibtn sm ghost" onclick="delLog('${d}',${JSON.stringify(x.id)})" aria-label="Remove">${ic("x",16)}</button></div>`).join("")||`<p class="mut sm-t" style="margin:0 0 4px">Nothing logged. Tap + to add food.</p>`}</div>`}).join("")}
- <div class="card"><div class="ch"><h3>Water</h3><span class="mut sm-t">${S.water[d]||0} / ${R(S.user.w*35)} ml</span></div><div class="row"><button onclick="drink(-250)">− 250</button><button class="pri" onclick="drink(250)">${ic("drop",16)} + 250 ml</button></div></div>
+ ${waterCard()}
  <div class="card"><h3>Weekly review</h3>${curTier()=="pro"?`<p style="white-space:pre-wrap">${esc(wsum||"Get an AI review of your last 7 days.")}</p><button class="pri" onclick="weekAI()">Review my week</button>`:`<p class="mut">The weekly AI review unlocks at level ${TIERS.pro.lv} (${rkAtLv(TIERS.pro.lv).n}). Keep earning XP to rank up.</p>`}</div>`};
 const rkAtLv=lv=>{let r=0;RANKS.forEach((k,i)=>{if(lv>=k.lv)r=i});return RANKS[r]};
 let wsum="";
 const delLog=(d,id)=>{S.flog[d]=(S.flog[d]||[]).filter(e=>e.id!=id);go()};
+const waterCard=()=>{const k=TD(),w=S.water[k]||0,g=R(S.user.w*35),p=Math.min(100,w/g*100);return `<div class="card water"><div class="ch"><h3>Water</h3><span class="chip ${w>=g?"sel":""}">${w>=g?"Goal reached":R(p)+"%"}</span></div><div class="big">${w}<span class="mut" style="font-size:15px;font-weight:600"> / ${g} ml</span></div><div class="bar2"><div style="width:${p}%;background:var(--ac2)"></div></div><div class="mut sm-t">${w>=g?"Nice, you've hit today's goal.":(g-w)+" ml to go ("+Math.ceil((g-w)/250)+" glasses)"}</div><div class="row"><button class="grow" onclick="drink(-250)" aria-label="Remove 250 ml">− 250</button><button class="pri grow" onclick="drink(250)">${ic("drop",16)} + 250 ml</button></div></div>`};
 function drink(n){const k=TD(),b=S.water[k]||0,g=R(S.user.w*35);S.water[k]=Math.max(0,b+n);if(n>0){gain(XPV.water,"water",XPV.waterCap);if(S.water[k]>=g&&!S.water[k+"g"]){S.water[k+"g"]=1;gain(XPV.hydra);cheer("Hydration goal hit! +"+XPV.hydra+" XP","drop")}}else if(b>0)lose(XPV.water,"water");if(S.water[k]<g)delete S.water[k+"g"];go()}
 /* ---- food search + portion ---- */
 let FM="";
@@ -75,7 +76,8 @@ function logR(id,mt){const r=S.recipes.find(x=>x.id==id);if(r){logFood({n:r.n,..
 
 /* ======================= MEALS ======================= */
 const mealSub=k=>{sub.meals=k;go()};
-V.meals=()=>subs(sub.meals,[["plan","Plan"],["recipes","Recipes"],["saved","Saved"],["prep","Prep"],["shop","Shop"]],"mealSub")+({plan:planV,recipes:rcpV,saved:savedV,prep:prepV,shop:shopV})[sub.meals]();
+V.shop=()=>shopV();
+V.meals=()=>subs(sub.meals,[["plan","Plan"],["recipes","Recipes"],["saved","Saved"],["prep","Prep"]],"mealSub")+({plan:planV,recipes:rcpV,saved:savedV,prep:prepV})[sub.meals==="shop"?"plan":sub.meals]();
 /* ---- recipe viewer ---- */
 const vmSaved=r=>({n:r.n,d:r.d||"",t:r.mins||0,typ:r.typ?TY[r.typ]:"",tags:[],i:r.i,steps:r.steps||[],m:mac(r.i),rid:r.id,sw:[],cov:0});
 function cbVm(x){const s_=scaled(MEALS[x]);return s_?vmOf({m:MEALS[x],x,s:s_}):null}

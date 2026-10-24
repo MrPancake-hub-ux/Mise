@@ -64,10 +64,12 @@ async function discover(key) {
   }
 }
 
-async function candidates(env, key) {
+async function candidates(env, key, fast) {
   const out = [];
   if (env.MODEL) out.push(env.MODEL);
-  const d = await discover(key);
+  let d = await discover(key);
+  // "fast" requests (chat, logging, planning) try the lightweight flash-lite models first: much quicker replies.
+  if (fast && d.length) d = [...d.filter((n) => /lite/.test(n)), ...d.filter((n) => !/lite/.test(n))];
   if (d.length) out.push(...d);
   else out.push("gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite");
   return [...new Set(out)].filter((m) => !(badUntil[m] > Date.now()));
@@ -76,7 +78,7 @@ async function candidates(env, key) {
 function mkBody(b, omitThinking) {
   const parts = [{ text: b.text }];
   if (b.img) parts.push({ inline_data: { mime_type: "image/jpeg", data: b.img } });
-  const gc = { maxOutputTokens: b.img ? 900 : 1400, temperature: b.json ? 0.3 : 0.7 };
+  const gc = { maxOutputTokens: b.img ? 900 : b.fast ? 1100 : 1400, temperature: b.json ? 0.3 : 0.7 };
   if (b.json) gc.responseMimeType = "application/json";
   if (!omitThinking) gc.thinkingConfig = { thinkingBudget: 0 }; // answers faster; retried without if the model refuses
   return { contents: [{ role: "user", parts }], generationConfig: gc };
@@ -101,7 +103,7 @@ function errOf(status, text) {
 }
 
 async function generate(env, key, b, stream) {
-  const models = await candidates(env, key);
+  const models = await candidates(env, key, !!b.fast && !b.img);
   if (!models.length) return { err: { status: 404, kind: "model", msg: "No Gemini model is available for this key." } };
   let last = { status: 502, kind: "upstream", msg: "No response from the AI provider." }, tries = 0;
   for (const m of models) {

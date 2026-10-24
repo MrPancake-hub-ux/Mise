@@ -51,10 +51,10 @@ function applyTheme(){const r=document.documentElement,t=(S&&S.theme)||{};r.styl
 function th(){const o=["auto","light","dark"];S.theme.mode=o[(o.indexOf(S.theme.mode)+1)%3];toast("Theme: "+S.theme.mode);go()}
 
 /* ---------- navigation ---------- */
-const NAV=[["home","Today","home"],["food","Food","food"],["train","Train","dumbbell"],["meals","Meals","meals"],["coach","Coach","sparkles"]];
+const NAV=[["home","Today","home"],["food","Food","food"],["train","Train","dumbbell"],["meals","Meals","meals"],["shop","Shop","cart"],["coach","Coach","sparkles"]];
 const SIDE=[["prog","Progress","chart"],["xp","Earn XP","bolt"],["me","Profile","user"]];
-const TITLES={home:"Today",food:"Food diary",meals:"Meals",train:"Workouts",coach:"Coach",prog:"Progress",xp:"How to earn XP",me:"Profile and settings"};
-const ROUTE={prep:["meals","prep"],shop:["meals","shop"],log:["food"],cal:["prog","cal"],plan:["meals","plan"],chat:["coach"]};
+const TITLES={home:"Today",food:"Food diary",meals:"Meals",shop:"Shopping",train:"Workouts",coach:"Coach",prog:"Progress",xp:"How to earn XP",me:"Profile and settings"};
+const ROUTE={prep:["meals","prep"],log:["food"],cal:["home","cal"],plan:["meals","plan"],chat:["coach"]};
 let pTab="",pSub="";
 function go(t,s){let nav=false;if(t){const m=ROUTE[t];if(m){t=m[0];s=s||m[1]}if(t!=tab||(s&&sub[t]!=s))nav=true;tab=t;if(s)sub[t]=s;if(t=="train"&&S&&S.run)runMin=false}
  const y=window.scrollY;applyTheme();if(S)chkTier();
@@ -74,4 +74,4 @@ function shell(main){const wip=S.run&&(tab!="train"||runMin);
  <nav class="bnav" aria-label="Main">${NAV.map(a=>nb(a,"bn")).join("")}</nav></div>`}
 const runClock=()=>{if(!S||!S.run)return"0:00";const s=Math.max(0,Math.floor((Date.now()-S.run.t)/1e3)),h=Math.floor(s/3600),m=Math.floor(s%3600/60);return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(s%60).padStart(2,"0")};
 setInterval(()=>{if(!S||!S.run)return;const t=runClock();["wipt","wot"].forEach(i=>{const e=$(i);if(e)e.textContent=t})},1000);
-function openMore(){openModal(()=>mh("More")+`<div class="menu">${[["prog","Progress","chart"],["xp","How to earn XP","bolt"],["me","Profile and settings","user"]].map(a=>`<button onclick="closeModal();go('${a[0]}')">${ic(a[2],22)}${a[1]}</button>`).join("")}<button onclick="closeModal();go('prog','cal')">${ic("cal",22)}Calendar and events</button><button onclick="closeModal();go('me','legal')">${ic("shield",22)}Privacy, terms and health notice</button><button onclick="th();repaintModal()">${ic("contrast",22)}Theme: ${S.theme.mode} (tap to change)</button><button class="dg" onclick="closeModal();logout()">${ic("logout",22)}Log out</button></div>`)}
+function openMore(){openModal(()=>mh("More")+`<div class="menu">${[["prog","Progress","chart"],["xp","How to earn XP","bolt"],["me","Profile and settings","user"]].map(a=>`<button onclick="closeModal();go('${a[0]}')">${ic(a[2],22)}${a[1]}</button>`).join("")}<button onclick="closeModal();go('home','cal')">${ic("cal",22)}Calendar</button><button onclick="closeModal();go('me','legal')">${ic("shield",22)}Privacy, terms and health notice</button><button onclick="th();repaintModal()">${ic("contrast",22)}Theme: ${S.theme.mode} (tap to change)</button><button class="dg" onclick="closeModal();logout()">${ic("logout",22)}Log out</button></div>`)}

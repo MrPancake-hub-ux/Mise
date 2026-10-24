@@ -22,14 +22,14 @@ canvas#cf{position:fixed;inset:0;pointer-events:none;z-index:90;width:100%;heigh
 .bar .ttl{font-weight:700;font-size:16px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar .brand:empty,.bar .brand{flex:none}
 .main{max-width:1040px;margin:0 auto;padding:14px 14px calc(var(--bn) + 28px + env(safe-area-inset-bottom,0px))}
-.bnav{position:fixed;left:0;right:0;bottom:0;z-index:25;display:grid;grid-template-columns:repeat(5,1fr);background:color-mix(in srgb,var(--card) 94%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--bd);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:25;display:grid;grid-template-columns:repeat(6,1fr);background:color-mix(in srgb,var(--card) 94%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--bd);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
 .bnav button{display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;color:var(--mut);font:inherit;font-size:11px;font-weight:600;padding:6px 0;min-height:0;border-radius:14px;cursor:pointer;position:relative}
 .bnav button.on{color:var(--ac)}
 .bnav button.on::before{content:"";position:absolute;top:-7px;width:26px;height:3px;border-radius:0 0 4px 4px;background:var(--ac)}
 .side{display:none}
-@media(min-width:960px){
+@media(min-width:700px){
  :root{--bn:0px}
- .shell{display:grid;grid-template-columns:244px 1fr}
+ .shell{display:grid;grid-template-columns:216px 1fr}
  .bnav,.mmore{display:none}
  .side{display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh;padding:18px 12px;border-right:1px solid var(--bd);background:var(--card);overflow-y:auto}
  .side .brand{padding:4px 10px 16px;font-size:24px}
@@ -75,7 +75,7 @@ textarea{width:100%;resize:vertical}
 button.chip{cursor:pointer;font-weight:500}.chip.sel{background:var(--ac2);color:#fff;border-color:var(--ac2)}.chip.acc{background:color-mix(in srgb,var(--ac) 12%,transparent);color:var(--ac);border-color:transparent}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0;margin:6px 0}.chips .chip{margin:0;flex:none}
 .seg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 14px;padding:4px 2px;position:sticky;top:calc(56px + env(safe-area-inset-top,0px));z-index:15;background:var(--bg)}
-@media(min-width:960px){.seg{top:62px}}
+@media(min-width:700px){.seg{top:62px}}
 .seg button{flex:none;border-radius:22px;padding:6px 15px;min-height:38px;color:var(--mut);background:var(--card)}
 .seg button.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
 .bar2{height:10px;background:var(--in);border-radius:9px;overflow:hidden;border:1px solid var(--bd)}.bar2>div{height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));border-radius:9px;transition:width .6s cubic-bezier(.2,.9,.3,1)}.bar2.over>div{background:var(--rd)}.bar2.thin{height:6px}
@@ -139,7 +139,7 @@ button.chip{cursor:pointer;font-weight:500}.chip.sel{background:var(--ac2);color
 
 /* ---------- workout ---------- */
 .wo-top{position:sticky;top:calc(56px + env(safe-area-inset-top,0px));z-index:14;background:var(--bg);padding:6px 0 10px}
-@media(min-width:960px){.wo-top{top:62px}}
+@media(min-width:700px){.wo-top{top:62px}}
 .wo-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}.wo-stats div{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:7px 4px}.wo-stats b{display:block;font-size:18px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}.wo-stats span{font-size:12px;color:var(--mut)}
 .exc{padding:14px 12px}.exc .eh{display:flex;align-items:center;gap:8px;margin-bottom:8px}.exc .eh h3{flex:1;min-width:0;font-size:16px;color:var(--ac)}
 .exc.ss{border-left:5px solid var(--ssc,var(--ac2));border-radius:6px 18px 18px 6px}.sslab{font-size:12px;font-weight:700;color:var(--ssc,var(--ac2));margin:0 0 4px}
@@ -191,8 +191,8 @@ button.chip{cursor:pointer;font-weight:500}.chip.sel{background:var(--ac2);color
 .auth .hero ul{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:10px}.auth .hero li{display:flex;gap:10px;align-items:center;font-weight:600}.auth .hero li .ic{background:#ffffff26;border-radius:10px;padding:6px;width:32px;height:32px}
 .auth .hero .rks{display:flex;gap:4px;margin-top:20px;flex-wrap:wrap}
 .auth .box{padding:22px 18px 40px;max-width:520px;width:100%;margin:0 auto}
-@media(min-width:900px){.auth{grid-template-columns:1.05fr 1fr}.auth .hero{padding:48px;display:flex;flex-direction:column;justify-content:center}.auth .hero h1{font-size:44px}.auth .box{padding:48px 36px;align-self:center}}
-@media(max-width:899px){.auth .hero ul,.auth .hero .rks+p{display:none}}
+@media(min-width:700px){.auth{grid-template-columns:1.05fr 1fr}.auth .hero{padding:48px;display:flex;flex-direction:column;justify-content:center}.auth .hero h1{font-size:44px}.auth .box{padding:48px 36px;align-self:center}}
+@media(max-width:699px){.auth .hero ul,.auth .hero .rks+p{display:none}}
 .steps{display:flex;gap:6px;margin-bottom:16px}.steps i{flex:1;height:5px;border-radius:3px;background:var(--bd)}.steps i.on{background:var(--ac)}
 .tabs2{display:grid;grid-template-columns:1fr 1fr;background:var(--in);border-radius:14px;padding:4px;margin-bottom:18px}.tabs2 button{border:0;background:none;border-radius:11px;min-height:40px}.tabs2 button.on{background:var(--card);color:var(--tx);box-shadow:var(--sh)}
 .legal-links{font-size:13px;color:var(--mut);margin-top:16px;text-align:center}.legal-links a{color:var(--mut);margin:0 6px}
@@ -220,10 +220,20 @@ details>summary{cursor:pointer;list-style:none}details>summary::-webkit-details-
 .scrollx{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;scrollbar-width:none}.scrollx::-webkit-scrollbar{display:none}.scrollx .chip{flex:none}
 .coachw .chat{min-height:46vh;max-height:calc(100dvh - 330px);overflow-y:auto}
 .composer{display:flex;gap:8px;align-items:center;position:sticky;bottom:calc(var(--bn) + 8px + env(safe-area-inset-bottom,0px));background:var(--bg);padding:6px 0}
-@media(min-width:960px){.composer{bottom:8px}}
+@media(min-width:700px){.composer{bottom:8px}}
 .composer input{flex:1;min-width:0}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:14px;padding:10px 14px;font-weight:600;min-height:44px}
 .menu a.btn{justify-content:flex-start;margin-bottom:8px}
 .typ{font-size:10px;letter-spacing:-.01em;word-break:keep-all;overflow-wrap:normal;padding:0 2px}
 .rings{flex-wrap:nowrap;gap:2px}.rg{width:auto;flex:1;min-width:0}.rg svg{width:100%;max-width:74px}
 .seg button{padding:6px 13px}
+.agree{display:flex;gap:10px;align-items:flex-start;color:var(--mut);font-size:14px;margin:10px 0;cursor:pointer;white-space:normal}.agree input{margin-top:3px;width:22px;height:22px}.agree>span{flex:1;min-width:0}
+.eq{display:flex;justify-content:space-around;align-items:center}.eq>div{text-align:center;min-width:0}.eq b{font-size:20px}
+.bnav button{font-size:10.5px}
+.water{display:flex;flex-direction:column;gap:8px}.water .big{font-size:28px;font-weight:800}.water .bar2{height:14px}
+.dayc{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px;border-radius:18px;border:1px solid color-mix(in srgb,var(--ac) 35%,var(--bd));background:linear-gradient(120deg,color-mix(in srgb,var(--ac) 12%,var(--card)),color-mix(in srgb,var(--ac2) 10%,var(--card)));margin-bottom:14px;min-height:0;cursor:pointer}
+.dayc .av{width:44px;height:44px;border-radius:50%}.dayc b{font-size:16px;display:block}
+.score{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:18px;flex:none;background:conic-gradient(var(--ac2) calc(var(--p)*1%),var(--in) 0);position:relative}.score::after{content:attr(data-v);position:absolute;inset:5px;border-radius:50%;background:var(--card);display:grid;place-items:center}
+@media(max-width:1099px){.grid.g3{grid-template-columns:1fr 1fr}.grid.g3>.span2{grid-column:auto}}
+@media(min-width:700px) and (max-width:1099px){.auth .hero h1{font-size:34px}}
+.auth .hero{max-height:none}@media(max-width:699px){.auth .hero{padding-bottom:18px}.auth .hero .rks{margin-top:12px}}

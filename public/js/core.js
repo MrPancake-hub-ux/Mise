@@ -36,10 +36,10 @@ function save(force){if(!S)return;let j;try{j=JSON.stringify(S,(k,x)=>k=="upd"?u
  if(j===lastJ&&!force)return;lastJ=j;S.upd=Date.now();
  try{localStorage.setItem(K+"u:"+S.id,JSON.stringify(S));if(!S.cloud){(S.rm?localStorage:sessionStorage).setItem(K+"cur",S.id);if(!S.rm)localStorage.removeItem(K+"cur")}}catch(e){}
  if(S.cloud&&typeof cloudQueue=="function")cloudQueue()}
-function blank(u){return{user:u,foods:FOODS.slice(),recipes:[],plan:{},ps:"",pantry:[],flog:{},wlog:[],aw:{},shist:[],batches:[],pchat:[],tier:"free",use:{chat:[],photo:{},pt:0},ai:{p:"gemini",key:"",model:"gemini-2.5-flash",base:"",proxy:""},notif:{on:false,ev:true,evMin:10,meals:false,mt:{b:"08:00",l:"12:30",d:"18:30"},water:0,wo:"",fired:{},lw:0},lists:[{id:1,name:"Groceries",budget:100,items:[]}],exs:EXS.slice(),routines:DR(),hist:[],run:null,events:[],water:{},xp:0,xd:{},theme:{ac:"",ac2:"",mode:"auto"},speak:false,rv:2,chat:[{r:"a",t:"Hi, I’m Mise. Ask me anything about food, training or your plan. I can also do things for you: log what you ate, plan your week, swap meals, build workouts and more. Tap the mic to talk."}]}}
+function blank(u){return{user:u,foods:FOODS.slice(),recipes:[],plan:{},ps:"",pantry:[],flog:{},wlog:[],aw:{},shist:[],batches:[],pchat:[],tier:"free",use:{chat:[],photo:{},pt:0},ai:{p:"gemini",key:"",model:"gemini-2.5-flash",base:"",proxy:""},notif:{on:false,ev:true,evMin:10,meals:false,mt:{b:"08:00",l:"12:30",d:"18:30"},water:0,wo:"",fired:{},lw:0},lists:[{id:1,name:"Groceries",budget:100,items:[]}],exs:EXS.slice(),routines:DR(),hist:[],run:null,events:[],water:{},days:{},xp:0,xd:{},theme:{ac:"",ac2:"",mode:"auto"},speak:false,rv:2,chat:[{r:"a",t:"Hi, I’m Mise. Ask me anything about food, training or your plan. I can also do things for you: log what you ate, plan your week, swap meals, build workouts and more. Tap the mic to talk."}]}}
 const EXTRA=(n)=>({n,m:"Full body",g:"Full body",eq:"Other",sec:[],ty:"wr",kw:"",cu:1});
 function fix(){S=Object.assign(blank(S.user),S);const u=S.user;u.diet=u.diet||[];u.dis=u.dis||"";u.act=nearAct(u.act||1.375).v;if(u.a<18)u.g="keep";
- S.theme=S.theme||{ac:"",ac2:"",mode:"auto"};S.chat=(S.chat||[]).filter(c=>c.t);S.pchat=(S.pchat||[]).filter(c=>c.t);S.xd=S.xd||{};
+ S.theme=S.theme||{ac:"",ac2:"",mode:"auto"};S.chat=(S.chat||[]).filter(c=>c.t);S.pchat=(S.pchat||[]).filter(c=>c.t);S.xd=S.xd||{};S.days=S.days||{};
  FOODS.forEach(f=>{const i=S.foods.findIndex(x=>x.n==f.n);if(i<0)S.foods.push(f);else if(!S.foods[i].cu){S.foods[i]=Object.assign({},f)}});
  const old=S.exs||[];S.exs=EXDB.slice();old.forEach(e=>{if(!EXDB.some(d=>d.n==e.n))S.exs.push(e.g?e:{n:e.n,m:e.m||"Full body",g:GROUP[e.m]||"Full body",eq:"Other",sec:[],ty:"wr",kw:"",cu:1})});
  if(S.rv!=2){S.ll=null;S.lr=null;S.rv=2}
@@ -50,7 +50,7 @@ function mealOfTime(t){const h=+(String(t||"12:00").slice(0,2));return h<10?"b":
 function mk(u,o,h,sl,rm,id){S=Object.assign(blank(u),o||{});S.user=u;S.id=id||Date.now().toString(36);if(!id){const a=idx();a.push({id:S.id,n:u.n,h:h||"",s:sl||""});try{localStorage.setItem(K+"idx",JSON.stringify(a))}catch(e){}}S.rm=!!rm;fix();if(!o){seedStarter();S.seeded=1}lastJ="";save(true)}
 
 /* ---------- XP, levels, ranks ---------- */
-const XPV={set:10,setCap:250,pr:25,prCap:100,finish:20,streak:5,streakCap:25,food:3,foodCap:15,kcal:25,protein:15,water:5,waterCap:20,hydra:10,weigh:10,recipe:20,recipeCap:60,plan:30,batch:15,event:5,eventCap:15,photo:5,trophy:25};
+const XPV={set:10,setCap:250,pr:25,prCap:100,finish:20,streak:5,streakCap:25,food:3,foodCap:15,kcal:25,protein:15,water:5,waterCap:20,hydra:10,weigh:10,recipe:20,recipeCap:60,plan:30,batch:15,event:5,eventCap:15,photo:5,trophy:25,checkin:10};
 function gain(n,key,cap){if(key){const d=TD();if(!S.xd||S.xd.d!=d)S.xd={d};const u=S.xd[key]||0;n=Math.min(n,cap-u);if(n<=0)return 0;S.xd[key]=u+n}S.xp+=n;return n}
 function lose(n,key){if(key&&S.xd&&S.xd.d==TD())S.xd[key]=Math.max(0,(S.xd[key]||0)-n);S.xp=Math.max(0,S.xp-n)}
 const RANKS=[
@@ -80,6 +80,7 @@ function targetsFor(u){const b=bmrOf(u),adj=u.a<18?0:({cut:-400,keep:0,bulk:300}
 const tgt=()=>targetsFor(S.user);
 const isMinor=()=>S&&S.user.a<18;
 function dayMac(i){const r={k:0,p:0,c:0,f:0};SL.forEach(s=>{const rc=S.recipes.find(x=>x.id==S.plan[i+s]);if(rc){const m=mac(rc.i);for(const k in r)r[k]+=m[k]}});return r}
+const burnOf=d=>((S.days||{})[d]||{}).burn||0;
 const eaten=d=>{const r={k:0,p:0,c:0,f:0};(S.flog[d]||[]).forEach(e=>{r.k+=e.k;r.p+=e.p;r.c+=e.c;r.f+=e.f});return r};
 function logFood(e,d){d=d||TD();(S.flog[d]=S.flog[d]||[]).push({id:Date.now()+Math.random(),n:e.n,k:R(e.k),p:R(e.p),c:R(e.c),f:R(e.f),t:new Date().toTimeString().slice(0,5),mt:e.mt||mealOfTime(new Date().toTimeString().slice(0,5)),s:e.s||"manual"});gain(XPV.food,"food",XPV.foodCap)}
 function body(){const u=S.user,bmi=u.w/((u.h/100)**2),bmr=bmrOf(u);return{bmi:R(bmi*10)/10,bmr:R(bmr),tdee:R(bmr*u.act),minor:u.a<18,p:R(u.w*2)}}
