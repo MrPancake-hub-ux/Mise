@@ -1,12 +1,12 @@
 /* Mise AI: server calls, voice input, coach chat and the actions the coach can perform. */
 const API="/api/ai";
-let AI_UP=null,aiBusy=0,busy=0,U=[],navT=null,pend=null,lastModel="",aiStat="";
+let NEWS=false,AI_UP=null,aiBusy=0,busy=0,U=[],navT=null,pend=null,lastModel="",aiStat="";
 const chatUsed=()=>{const c=Date.now()-36e5;S.use.chat=S.use.chat.filter(t=>t>c);return S.use.chat.length},chatLeft=()=>Math.max(0,tier().chat-chatUsed()),resetMin=()=>S.use.chat.length?Math.max(1,Math.ceil((S.use.chat[0]+36e5-Date.now())/6e4)):0;
 const aiOK=()=>AI_UP!==false;
 const aiLine=()=>aiOK()?chatUsed()+"/"+tier().chat+" AI chats used this hour"+(chatUsed()?" (resets in "+resetMin()+" min)":"")+".":"The AI assistant isn’t reachable right now.";
 const R2=m=>({kcal:R(m.k),protein:R(m.p),carbs:R(m.c),fat:R(m.f)}),pj=t=>{const m=String(t).match(/\{[\s\S]*\}/);return JSON.parse(m?m[0]:t)};
 const bookList=()=>MEALS.map((m,i)=>{const s_=scaled(m);return s_?i+"|"+m[0]+"|"+TY[m[1]]+"|"+R(s_.m.k)+" kcal|P"+R(s_.m.p):null}).filter(Boolean).join("\n");
-async function probeAI(){try{const r=await fetch(API);if(!r.ok){AI_UP=false;return}const h=await r.json();AI_UP=!!(h&&h.ok&&h.keyConfigured!==false)}catch(e){AI_UP=location.protocol=="file:"?false:null}}
+async function probeAI(){try{const r=await fetch(API);if(!r.ok){AI_UP=false;return}const h=await r.json();AI_UP=!!(h&&h.ok&&h.keyConfigured!==false);NEWS=!!(h&&h.newsletter)}catch(e){AI_UP=location.protocol=="file:"?false:null}}
 function aiErrMsg(e){const m=String(e&&e.message||e),k=e&&e.kind;if(/Failed to fetch|NetworkError|Load failed/i.test(m))return"I couldn’t reach the AI service. Check your internet connection.";if(k=="limit"||k=="empty")return m;if(k=="rate"||(e&&e.status==429))return"The AI is busy right now because its provider is limiting requests. Wait about a minute and try again.";if(k=="key"||(e&&(e.status==401||e.status==403)))return"The AI key was rejected or is missing on the server. Check the GEMINI_API_KEY secret in Cloudflare.";if(k=="model")return"No usable AI model was found. Set a MODEL variable on the server (see the guide).";return"The AI had a problem: "+m.slice(0,160)}
 async function aiCall(text,img,json){const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text,img:img||null,json:!!json,fast:!img,uid:S.id})}),j=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(j.error||"HTTP "+r.status);e.status=r.status;e.kind=j.kind;throw e}lastModel=j.model||"";return j.text}
 async function aiStream(text,onText){const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text,stream:true,fast:true,uid:S.id})});
