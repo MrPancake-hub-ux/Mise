@@ -1,4 +1,4 @@
-/* Mise meal logic: recipe scaling, diet adaptation, search, batches. Ported from the first version. */
+/* Setpoint meal logic: recipe scaling, diet adaptation, search, batches. Ported from the first version. */
 let sh=0;
 function scaled(m){const ad=adapt(m);if(!ad)return null;const bi=ad.i,b=mac(bi),t=tgt(),s=Math.min(1.6,Math.max(.5,t.k*({b:.25,s:.12}[m[1]]||.375)/b.k));const i=bi.map(a=>({f:a.f,g:Math.max(5,Math.min(cpg(a.f),Math.round(a.g*s/5)*5))}));return{i,m:mac(i),sw:ad.sw}}
 const TAGS=[["quick","Quick"],["hp","High protein"],["lc","Low carb"],["prep","Meal prep"],["budget","Budget"],["nocook","No cook"],["onepan","One pan"],["spicy","Spicy"],["comfort","Comfort"],["asian","Asian"],["mex","Mexican"],["med","Mediterranean"],["ital","Italian"],["ind","Indian"],["amer","American"]],TL={vegan:"Vegan",vegetarian:"Veggie",gf:"Gluten-free",df:"Dairy-free",nf:"Nut-free",ef:"Egg-free"};TAGS.forEach(a=>TL[a[0]]=a[1]);

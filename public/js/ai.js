@@ -1,5 +1,5 @@
-/* Mise AI: server calls, voice input, coach chat and the actions the coach can perform. */
-const API="/api/ai";
+/* Setpoint AI: server calls, voice input, coach chat and the actions the coach can perform. */
+const CFGX=window.MISE_CONFIG||{},BASE=(CFGX.API_BASE||"").replace(/\/$/,""),API=BASE+"/api/ai";
 let NEWS=false,AI_UP=null,aiBusy=0,busy=0,U=[],navT=null,pend=null,lastModel="",aiStat="";
 const chatUsed=()=>{const c=Date.now()-36e5;S.use.chat=S.use.chat.filter(t=>t>c);return S.use.chat.length},chatLeft=()=>Math.max(0,tier().chat-chatUsed()),resetMin=()=>S.use.chat.length?Math.max(1,Math.ceil((S.use.chat[0]+36e5-Date.now())/6e4)):0;
 const aiOK=()=>AI_UP!==false;
@@ -14,19 +14,35 @@ async function aiStream(text,onText){const r=await fetch(API,{method:"POST",head
  if(!r.body||!r.body.getReader){const t=await r.text();onText(t);return t}
  const rd=r.body.getReader(),dc=new TextDecoder();let acc="";for(;;){const{done,value}=await rd.read();if(done)break;acc+=dc.decode(value,{stream:true});onText(acc)}acc+=dc.decode();onText(acc);return acc}
 
-/* ---------- voice (Web Speech API; works in Chrome, Edge and Safari) ---------- */
+/* ---------- voice (Web Speech API in browsers; the native SpeechRecognition plugin inside the phone app) ---------- */
 const SR=typeof window!="undefined"&&(window.SpeechRecognition||window.webkitSpeechRecognition);
+/* Phone app: wraps the native plugin so it looks like the browser's SpeechRecognition (onresult/onerror/onend/start/stop). */
+function nativeRec(){let h1=null,h2=null,tm=null,done=false,got=false;const P=()=>plug("SpeechRecognition");
+ const r={lang:"en-AU",interimResults:true,continuous:false,onresult:null,onerror:null,onend:null,
+  start(){(async()=>{const p=P();try{
+    if(!p)throw{error:"unavailable"};
+    const av=await p.available();if(av&&av.available===false)throw{error:"unavailable"};
+    let pm=await p.checkPermissions();if(!granted(pm))pm=await p.requestPermissions();if(!granted(pm))throw{error:"not-allowed"};
+    h1=await p.addListener("partialResults",d=>{const t=d&&((d.matches&&d.matches[0])||d.accumulatedText);if(!t)return;got=true;const res=[{transcript:t}];res.isFinal=false;if(r.onresult)r.onresult({results:[res]});arm(2200)});
+    try{h2=await p.addListener("listeningState",d=>{if(d&&d.status=="stopped"&&got)finish()})}catch(e){}
+    arm(9000);
+    await p.start({language:r.lang,maxResults:1,partialResults:true,popup:false});
+   }catch(e){if(r.onerror)r.onerror({error:(e&&e.error)||String((e&&e.message)||e)});finish(true)}})()},
+  stop(){finish()}};
+ function arm(ms){clearTimeout(tm);tm=setTimeout(()=>finish(),ms)}
+ function finish(){if(done)return;done=true;clearTimeout(tm);try{h1&&h1.remove()}catch(e){}try{h2&&h2.remove()}catch(e){}const p=P();try{p&&p.stop()}catch(e){}if(r.onend)r.onend()}
+ return r}
 let REC=null,RECID="";
 const SENDERS={cq:()=>say(),aq:()=>aiFind(),pai:()=>prepAI(),pq:()=>psay()};
-function voiceStart(id,send){if(!SR)return toast("Voice input isn’t supported in this browser. Try Chrome, Edge or Safari.");
+function voiceStart(id,send){if(!SR&&!NAT)return toast("Voice input isn’t supported in this browser. Try Chrome, Edge or Safari.");
  if(REC){const same=RECID==id;try{REC.stop()}catch(e){}if(same)return}
  const el=$(id);if(!el)return;const base=el.value?el.value.trim()+" ":"";
- const r=new SR();r.lang=navigator.language||"en-AU";r.interimResults=true;r.continuous=false;REC=r;RECID=id;
+ const r=NAT?nativeRec():new SR();r.lang=navigator.language||"en-AU";r.interimResults=true;r.continuous=false;REC=r;RECID=id;
  const mic=$("mic_"+id);if(mic)mic.classList.add("rec");
  if(id=="alt"){AL.listening=1;AL.text=el.value;repaintModal()}if(id=="dyt"){DY.listening=1;DY.text=el.value;repaintModal()}
  let fin="";
  r.onresult=e=>{let t="";for(let i=0;i<e.results.length;i++){t+=e.results[i][0].transcript;if(e.results[i].isFinal)fin=t}const el2=$(id);if(el2)el2.value=base+t;if(id=="alt")AL.text=base+t;if(id=="dyt")DY.text=base+t};
- r.onerror=e=>{if(e.error=="not-allowed"||e.error=="service-not-allowed")toast("Microphone permission was blocked. Allow it in your browser settings.");else if(e.error!="no-speech"&&e.error!="aborted")toast("Voice input stopped: "+e.error)};
+ r.onerror=e=>{if(e.error=="not-allowed"||e.error=="service-not-allowed")toast(NAT?"Microphone permission was blocked. Allow it in your phone’s Settings, Apps, Setpoint, Permissions.":"Microphone permission was blocked. Allow it in your browser settings.");else if(e.error=="unavailable")toast("Speech recognition isn’t available on this phone. Check that the Google app is installed and up to date.");else if(e.error!="no-speech"&&e.error!="aborted")toast("Voice input stopped: "+e.error)};
  r.onend=()=>{const m=$("mic_"+id);if(m)m.classList.remove("rec");const had=(($(id)||{}).value||"").trim();REC=null;RECID="";if(id=="alt"){AL.listening=0;AL.text=($("alt")||{}).value||AL.text;repaintModal();if(AL.text.trim()&&aiOK())alGo();return}if(id=="dyt"){DY.listening=0;DY.text=($("dyt")||{}).value||DY.text;repaintModal();if(DY.text.trim()&&aiOK())dayGo();return}if(send&&had&&SENDERS[id])SENDERS[id]()};
  try{r.start();toast("Listening… speak now","","mic")}catch(e){REC=null}}
 function speak(t){if(!S.speak||!("speechSynthesis" in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t).replace(/\*\*/g,"").replace(/[-•]\s/g,"").slice(0,600));u.lang=navigator.language||"en-AU";speechSynthesis.speak(u)}catch(e){}}
@@ -70,7 +86,7 @@ Never remove anything except the single item the user named. Never say something
 const PLANSTYLE=`Structure guide. Meal plans: a **Day 1** heading then bullets for Breakfast, Lunch and Dinner with kcal, repeated for each day, then a **Totals** line. Recipe ideas: name each idea and why it fits, and also call show_recipes with ids from the RECIPE BOOK. Weight gain or loss questions: **Your numbers** (TDEE, daily target, protein), **What to do** bullets, **Food ideas**, **Watch out for**.`,PREPSTYLE=`You are the meal-prep coach. Structure prep answers as: **What to cook** (recipes and servings), **Shopping list** (bullets with grams), **Cook-day steps** (numbered), **Storage and reheating** (bullets). When asked, apply it with create_batch, add_ingredients or plan_week using ids from the RECIPE BOOK.`;
 function buildPrompt(q,mode){const u=S.user,pr=mode=="prep",td=TD(),bd=body(),t=tgt(),e=eaten(td),plan=SL.map(k=>{const r=S.recipes.find(x=>x.id==S.plan[di(td)+k]);return r?k+": "+r.n:null}).filter(Boolean),H=(pr?S.pchat:S.chat).filter(c=>c.t),hist=(H.length&&H[H.length-1].r=="u"?H.slice(0,-1):H).slice(-6).map(c=>(c.r=="u"?"User: ":"Assistant: ")+String(c.t).replace(/\n+/g," ").slice(0,350)).join("\n"),wt=S.wlog.slice(-5).map(x=>x.d+" "+x.w+"kg").join("; ")||"none",fl=(S.flog[td]||[]).map(x=>x.n+" "+x.k+"kcal").slice(-8).join("; ")||"nothing yet";
  const need=foodish(q)||pr;
- return `You are Mise, a friendly, knowledgeable AI coach inside a nutrition and training app. Answer ANY question the way a good general AI assistant would. When a question is about the user's body, food, training or progress, personalise the answer using their numbers below and quote them.
+ return `You are Setpoint, a friendly, knowledgeable AI coach inside a nutrition and training app. Answer ANY question the way a good general AI assistant would. When a question is about the user's body, food, training or progress, personalise the answer using their numbers below and quote them.
 TODAY: ${new Date().toDateString()} (${td}).
 USER: ${u.n}, age ${u.a}, ${u.h} cm, ${u.w} kg, ${u.s=="m"?"male":"female"}, activity x${u.act}, goal ${u.g}, diet ${u.diet.join(", ")||"none"}, avoids ${u.dis||"nothing"}. Goal weight ${u.gw||"not set"}. Recent weigh-ins: ${wt}.
 BODY: BMI ${bd.bmi}, BMR ${bd.bmr} kcal, TDEE ${bd.tdee} kcal, protein at 2 g/kg = ${bd.p} g, under_18=${bd.minor}.
@@ -138,9 +154,9 @@ const ask=t=>converse(t,"main");
 /* ---------- coach screen ---------- */
 const SUGG=["I just ate two eggs on toast and a banana","What should I eat tonight?","Plan my week using chicken, rice and broccoli","Build me a push workout","What’s the best way to gain weight?","Log 500 ml of water"];
 V.coach=()=>{const msgs=S.chat.filter(c=>c.t||c.p);
- return `<div class="coachw"><div class="coach-h"><div class="av g">${ic("sparkles",20)}</div><div class="grow"><b>Mise Coach</b><div class="mut sm-t">${aiLine()}</div></div><button class="ibtn ghost" onclick="S.speak=!S.speak;if(!S.speak&&window.speechSynthesis)speechSynthesis.cancel();toast('Spoken replies '+(S.speak?'on':'off'));go()" aria-label="Spoken replies ${S.speak?"on":"off"}" aria-pressed="${!!S.speak}">${ic(S.speak?"volume":"volumeOff",22)}</button><button class="ibtn ghost" onclick="dbl('cc',()=>{S.chat=[S.chat[0]];go()})" aria-label="Clear chat">${ic("trash",20)}</button></div>
+ return `<div class="coachw"><div class="coach-h"><div class="av g">${ic("sparkles",20)}</div><div class="grow"><b>Setpoint Coach</b><div class="mut sm-t">${aiLine()}</div></div><button class="ibtn ghost" onclick="S.speak=!S.speak;if(!S.speak&&window.speechSynthesis)speechSynthesis.cancel();toast('Spoken replies '+(S.speak?'on':'off'));go()" aria-label="Spoken replies ${S.speak?"on":"off"}" aria-pressed="${!!S.speak}">${ic(S.speak?"volume":"volumeOff",22)}</button><button class="ibtn ghost" onclick="dbl('cc',()=>{S.chat=[S.chat[0]];go()})" aria-label="Clear chat">${ic("trash",20)}</button></div>
  <div class="chips scrollx">${SUGG.map(t=>`<button class="chip" onclick="ask(this.textContent)">${esc(t)}</button>`).join("")}</div>
  <div class="chat" id="ch">${msgs.map((c,i)=>bub(c,i==msgs.length-1)).join("")}</div>
  ${REC&&RECID=="cq"?`<div class="listen"><div class="wv"><i></i><i></i><i></i><i></i><i></i></div><b class="grow">Listening…</b></div>`:""}
- <div class="composer"><button class="ibtn lg mic" id="mic_cq" onclick="voiceStart('cq',true)" aria-label="Talk to Mise">${ic("mic",22)}</button><input id="cq" placeholder="Type or tap the mic and talk" onkeydown="if(event.key=='Enter')say()" ${busy?"disabled":""} autocomplete="off"><button class="pri ibtn lg" onclick="say()" ${busy?"disabled":""} aria-label="Send">${busy?'<span class="spin"></span>':ic("send",22)}</button></div>
- <p class="mut sm-t tc" style="margin:6px 0 0">Mise can log food, plan meals, edit your plan and build workouts. It can make mistakes, so check anything important.</p></div>`};
+ <div class="composer"><button class="ibtn lg mic" id="mic_cq" onclick="voiceStart('cq',true)" aria-label="Talk to Setpoint">${ic("mic",22)}</button><input id="cq" placeholder="Type or tap the mic and talk" onkeydown="if(event.key=='Enter')say()" ${busy?"disabled":""} autocomplete="off"><button class="pri ibtn lg" onclick="say()" ${busy?"disabled":""} aria-label="Send">${busy?'<span class="spin"></span>':ic("send",22)}</button></div>
+ <p class="mut sm-t tc" style="margin:6px 0 0">Setpoint can log food, plan meals, edit your plan and build workouts. It can make mistakes, so check anything important.</p></div>`};

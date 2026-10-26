@@ -1,5 +1,9 @@
-/* Mise core: state, storage, helpers, XP and ranks, nutrition targets. */
+/* Setpoint core: state, storage, helpers, XP and ranks, nutrition targets. */
 const K="mise:",DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],SL=["Breakfast","Lunch","Dinner"],MT=[["b","Breakfast"],["l","Lunch"],["d","Dinner"],["s","Snacks"]];
+/* Phone-app helpers: true only inside the Capacitor app. plug() returns a native plugin (or null). */
+const NAT=!!(typeof window!="undefined"&&window.Capacitor&&typeof window.Capacitor.isNativePlatform=="function"&&window.Capacitor.isNativePlatform());
+const plug=n=>{try{const C=window.Capacitor;return (C.Plugins&&C.Plugins[n])||C.registerPlugin(n)}catch(e){return null}};
+const granted=p=>!!p&&Object.values(p).includes("granted");
 const MG=["Chest","Back","Shoulders","Arms","Legs","Core","Cardio","Full body"];
 const MIN_AGE=13;
 const DR=()=>[{id:1,name:"Upper body",ex:[{x:"Bench press",s:3},{x:"Barbell row",s:3},{x:"Overhead press",s:3},{x:"Bicep curl",s:2}]},{id:2,name:"Lower body",ex:[{x:"Squat",s:4},{x:"Romanian deadlift",s:3},{x:"Leg press",s:3},{x:"Plank",s:3}]}];
@@ -36,7 +40,7 @@ function save(force){if(!S)return;let j;try{j=JSON.stringify(S,(k,x)=>k=="upd"?u
  if(j===lastJ&&!force)return;lastJ=j;S.upd=Date.now();
  try{localStorage.setItem(K+"u:"+S.id,JSON.stringify(S));if(!S.cloud){(S.rm?localStorage:sessionStorage).setItem(K+"cur",S.id);if(!S.rm)localStorage.removeItem(K+"cur")}}catch(e){}
  if(S.cloud&&typeof cloudQueue=="function")cloudQueue()}
-function blank(u){return{user:u,foods:FOODS.slice(),recipes:[],plan:{},ps:"",pantry:[],flog:{},wlog:[],aw:{},shist:[],batches:[],pchat:[],tier:"free",use:{chat:[],photo:{},pt:0},ai:{p:"gemini",key:"",model:"gemini-2.5-flash",base:"",proxy:""},notif:{on:false,ev:true,evMin:10,meals:false,mt:{b:"08:00",l:"12:30",d:"18:30"},water:0,wo:"",fired:{},lw:0},lists:[{id:1,name:"Groceries",budget:100,items:[]}],exs:EXS.slice(),routines:DR(),hist:[],run:null,events:[],water:{},days:{},xp:0,xd:{},theme:{ac:"",ac2:"",mode:"auto"},speak:false,rv:2,chat:[{r:"a",t:"Hi, I’m Mise. Ask me anything about food, training or your plan. I can also do things for you: log what you ate, plan your week, swap meals, build workouts and more. Tap the mic to talk."}]}}
+function blank(u){return{user:u,foods:FOODS.slice(),recipes:[],plan:{},ps:"",pantry:[],flog:{},wlog:[],aw:{},shist:[],batches:[],pchat:[],tier:"free",use:{chat:[],photo:{},pt:0},ai:{p:"gemini",key:"",model:"gemini-2.5-flash",base:"",proxy:""},notif:{on:false,ev:true,evMin:10,meals:false,mt:{b:"08:00",l:"12:30",d:"18:30"},water:0,wo:"",fired:{},lw:0},lists:[{id:1,name:"Groceries",budget:100,items:[]}],exs:EXS.slice(),routines:DR(),hist:[],run:null,events:[],water:{},days:{},xp:0,xd:{},theme:{ac:"",ac2:"",mode:"auto"},speak:false,rv:2,chat:[{r:"a",t:"Hi, I’m Setpoint. Ask me anything about food, training or your plan. I can also do things for you: log what you ate, plan your week, swap meals, build workouts and more. Tap the mic to talk."}]}}
 const EXTRA=(n)=>({n,m:"Full body",g:"Full body",eq:"Other",sec:[],ty:"wr",kw:"",cu:1});
 function fix(){S=Object.assign(blank(S.user),S);const u=S.user;u.diet=u.diet||[];u.dis=u.dis||"";u.act=nearAct(u.act||1.375).v;if(u.a<18)u.g="keep";
  S.theme=S.theme||{ac:"",ac2:"",mode:"auto"};S.chat=(S.chat||[]).filter(c=>c.t);S.pchat=(S.pchat||[]).filter(c=>c.t);S.xd=S.xd||{};S.days=S.days||{};

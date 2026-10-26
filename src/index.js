@@ -1,4 +1,4 @@
-// Mise server file (Cloudflare Worker). It does three things:
+// Setpoint server file (Cloudflare Worker). It does three things:
 // 1) Serves the website files from the "public" folder.
 // 2) /api/ai: adds your secret Gemini key, picks the newest Gemini "flash" model that your key can use,
 //    retries and falls back to other models when Google says "too many requests" or "not found", and can stream replies.

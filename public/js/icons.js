@@ -1,4 +1,4 @@
-/* Mise icons: small stroke icons (24x24) and the ten rank medals. No emoji needed for navigation. */
+/* Setpoint icons: small stroke icons (24x24) and the ten rank medals. No emoji needed for navigation. */
 const IP={
 undo:"M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3",
 heart:"M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11z",

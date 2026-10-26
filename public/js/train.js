@@ -1,4 +1,4 @@
-/* Mise workouts (Hevy-style): live logging, set types, supersets, PR icons, exercise database, history and stats. */
+/* Setpoint workouts (Hevy-style): live logging, set types, supersets, PR icons, exercise database, history and stats. */
 const SSC=["#12b886","#ff8a3d","#8b5cf6","#e0457b","#0a84d6"],SSN="ABCDE";
 const EXF=[["all","All"],["Chest","Chest"],["Back","Back"],["Shoulders","Shoulders"],["Arms","Arms"],["Legs","Legs"],["Core","Core"],["Cardio","Cardio"],["Full body","Full body"],["Custom","My exercises"]];
 const TYN={wr:"Weight and reps",br:"Bodyweight reps",tm:"Time (seconds)",cd:"Distance and time"};

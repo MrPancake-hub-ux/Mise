@@ -1,4 +1,4 @@
-/* Mise design system. Mobile first: bottom tab bar on phones, sidebar from 960px. */
+/* Setpoint design system. Mobile first: bottom tab bar on phones, sidebar from 960px. */
 :root{--bg:#f5f6fb;--card:#fff;--tx:#14172e;--mut:#647089;--ac:#5b4bff;--ac2:#12b886;--wa:#ff8a3d;--gold:#e8a21a;--bd:#e5e7f2;--in:#f0f1f9;--pp:#fffaf0;--rd:#e5484d;--sh:0 1px 2px #1a1f3a0d,0 4px 14px #1a1f3a0a;--bn:64px;color-scheme:light}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a0c1b;--card:#141831;--tx:#eceefb;--mut:#9aa2c8;--ac:#8478ff;--bd:#262c55;--in:#0e1128;--pp:#1a1e3a;--sh:0 1px 2px #0006;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#0a0c1b;--card:#141831;--tx:#eceefb;--mut:#9aa2c8;--ac:#8478ff;--bd:#262c55;--in:#0e1128;--pp:#1a1e3a;--sh:0 1px 2px #0006;color-scheme:dark}

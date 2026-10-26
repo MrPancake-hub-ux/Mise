@@ -1,4 +1,4 @@
-/* Mise UI kit: toast, modals, pickers (searchable lists), navigation shell. */
+/* Setpoint UI kit: toast, modals, pickers (searchable lists), navigation shell. */
 const V={};
 function toast(t,kind,icon){const e=$("toast");e.innerHTML=(icon?ic(icon,18):"")+"<span>"+esc(t)+"</span>";e.className="show"+(kind?" "+kind:"");clearTimeout(toast.h);toast.h=setTimeout(()=>e.className="",kind=="pr"?3600:2800)}
 function dbl(k,f){if(armed==k){armed=null;f()}else{armed=k;go();setTimeout(()=>{if(armed==k){armed=null;go()}},3000)}}
@@ -68,8 +68,8 @@ function go(t,s){let nav=false;if(t){const m=ROUTE[t];if(m){t=m[0];s=s||m[1]}if(
 const subs=(cur,list,fn)=>`<div class="seg" role="tablist">${list.map(a=>`<button class="${cur==a[0]?"on":""}" role="tab" aria-selected="${cur==a[0]}" onclick="${fn}('${a[0]}')">${a[1]}</button>`).join("")}</div>`;
 function shell(main){const wip=S.run&&(tab!="train"||runMin);
  const nb=(a,cls)=>`<button class="${cls} ${tab==a[0]?"on":""}" onclick="go('${a[0]}')" aria-label="${a[1]}" ${tab==a[0]?'aria-current="page"':""}>${ic(a[2],cls=="nv"?20:23)}<span>${a[1]}</span></button>`;
- return `<div class="shell"><aside class="side"><div class="brand"><img src="icon.svg" alt="">Mise</div>${NAV.concat(SIDE).map(a=>nb(a,"nv")).join("")}<div class="sp"></div><div class="sep"></div><button class="nv" onclick="th()">${ic("contrast",20)}<span>Theme: ${S.theme.mode}</span></button><button class="nv" onclick="go('me','legal')">${ic("shield",20)}<span>Legal and help</span></button><button class="nv" onclick="logout()">${ic("logout",20)}<span>Log out</span></button></aside>
- <div class="col"><header class="bar"><div class="brand"><img src="icon.svg" alt="">${tab=="home"?"Mise":""}</div><div class="ttl">${tab=="home"?"":TITLES[tab]}</div>${rkBtn()}<button class="ibtn ghost mmore" onclick="openMore()" aria-label="More">${ic("menu",22)}</button></header>
+ return `<div class="shell"><aside class="side"><div class="brand"><img src="icon.svg" alt="">Setpoint</div>${NAV.concat(SIDE).map(a=>nb(a,"nv")).join("")}<div class="sp"></div><div class="sep"></div><button class="nv" onclick="th()">${ic("contrast",20)}<span>Theme: ${S.theme.mode}</span></button><button class="nv" onclick="go('me','legal')">${ic("shield",20)}<span>Legal and help</span></button><button class="nv" onclick="logout()">${ic("logout",20)}<span>Log out</span></button></aside>
+ <div class="col"><header class="bar"><div class="brand"><img src="icon.svg" alt="">${tab=="home"?"Setpoint":""}</div><div class="ttl">${tab=="home"?"":TITLES[tab]}</div>${rkBtn()}<button class="ibtn ghost mmore" onclick="openMore()" aria-label="More">${ic("menu",22)}</button></header>
  <main class="main" id="main">${wip?`<div class="wip" onclick="runMin=false;go('train')" role="button" tabindex="0">${ic("dumbbell",20)}<div class="grow">Workout in progress: ${esc(S.run.n)}</div><b id="wipt">${runClock()}</b><span>Resume</span></div>`:""}${main}</main></div>
  <nav class="bnav" aria-label="Main">${NAV.map(a=>nb(a,"bn")).join("")}</nav></div>`}
 const runClock=()=>{if(!S||!S.run)return"0:00";const s=Math.max(0,Math.floor((Date.now()-S.run.t)/1e3)),h=Math.floor(s/3600),m=Math.floor(s%3600/60);return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(s%60).padStart(2,"0")};

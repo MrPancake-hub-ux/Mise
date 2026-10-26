@@ -1,4 +1,4 @@
-/* Mise home, progress, level modal and the "how to earn XP" guide. */
+/* Setpoint home, progress, level modal and the "how to earn XP" guide. */
 const tipOf=()=>QUOTES[new Date().getDate()%QUOTES.length];
 function quests(){const td=TD(),t=tgt(),e=eaten(td),w=S.water[td]||0,wl=R(S.user.w*35),ent=(S.flog[td]||[]).length;
  return[
@@ -53,7 +53,7 @@ const XPRULES=[
  ["bolt","Hit your protein","prot","Reach 95% of your protein target.",XPV.protein,"once a day"],
  ["drop","Drink water","water","Each 250 ml you log.",XPV.water,"up to "+XPV.waterCap+" a day"],
  ["drop","Reach your water goal","hydra","Drink 35 ml per kg of body weight.",XPV.hydra,"once a day"],
- ["mic","Daily check-in","chk","Tell Mise how your day went (type or speak).",XPV.checkin,"once a day"],
+ ["mic","Daily check-in","chk","Tell Setpoint how your day went (type or speak).",XPV.checkin,"once a day"],
  ["scale","Weigh in","weigh","Log your weight in Progress.",XPV.weigh,"once a day"],
  ["book","Save or create a recipe","rec","From Recipes or by building your own.",XPV.recipe,"up to "+XPV.recipeCap+" a day"],
  ["cal","Plan your week","plan","Use Plan with AI or Quick plan.",XPV.plan,"each plan"],
@@ -101,7 +101,7 @@ V.home=()=>{const k=sub.home||"today";return subs(k,[["today","Today"],["cal","C
 const scoreCol=n=>n>=70?"var(--ac2)":n>=40?"var(--wa)":"var(--rd)";
 function dayCard(){const e=S.days[TD()];
  if(e)return `<button class="dayc" onclick="openDay()"><span class="score" style="--p:${e.score}" data-v="${e.score}"></span><div class="grow"><b>Today’s check-in done</b><div class="mut sm-t">${esc(e.summary||"")} · ${R(e.burn)} kcal burned</div></div><span class="lnk" style="color:var(--ac)">Edit</span></button>`;
- return `<button class="dayc" onclick="openDay()"><span class="av g">${ic("mic",22)}</span><div class="grow"><b>How was your day?</b><div class="mut sm-t">Say or type what you did. Mise logs calories burned and rates your day.</div></div>${ic("chevR",18)}</button>`}
+ return `<button class="dayc" onclick="openDay()"><span class="av g">${ic("mic",22)}</span><div class="grow"><b>How was your day?</b><div class="mut sm-t">Say or type what you did. Setpoint logs calories burned and rates your day.</div></div>${ic("chevR",18)}</button>`}
 let DY={};
 function openDay(d){d=d||TD();const e=S.days[d];DY={d,text:e?e.text:"",res:e?{acts:e.acts,score:e.score,summary:e.summary,tip:e.tip}:null,loading:0,err:"",listening:0};openModal(dyView)}
 function dyView(){const o=DY,r=o.res;
@@ -121,9 +121,9 @@ function daySave(noAI){const o=DY,r=o.res||{acts:[],score:0,summary:"",tip:""};i
  if(first)gain(XPV.checkin,"checkin",XPV.checkin);closeModal();toast("Day saved","","check");go()}
 function after(){if(!S||tab!="home"||(sub.home||"today")!="today"||S.jp==TD()||S.days[TD()]||modalOpen()||S.run||awOn||(S.user.a<18&&!S.u18ack))return;S.jp=TD();setTimeout(()=>{if(S&&!modalOpen()&&!awOn&&!S.days[TD()])openDay()},700)}
 function journalV(){const ds=Object.keys(S.days).sort().reverse(),last=[...Array(14)].map((_,i)=>dAdd(TD(),i-13)),sc=ds.map(d=>S.days[d].score).slice(0,7),avg=sc.length?R(sc.reduce((a,x)=>a+x,0)/sc.length):0,bn=ds.slice(0,7).reduce((a,d)=>a+S.days[d].burn,0);
- return `<div class="grid g2"><div class="card"><div class="ch"><h2>Productivity</h2><button class="lnk" onclick="openDay()">Check in</button></div>${ds.length?`<div class="eq"><div><b>${avg}</b><span>7-day average</span></div><i></i><div><b>${R(bn)}</b><span>kcal burned (7 days)</span></div><i></i><div><b>${ds.length}</b><span>Check-ins</span></div></div><div class="wk7 gap" style="height:90px">${last.map(d=>{const e=S.days[d];return `<div title="${d}"><i style="height:${e?Math.max(4,e.score*.8):2}%;${e?"background:"+scoreCol(e.score):"background:var(--bd)"}"></i>${DAYS[(new Date(d+"T00:00").getDay()+6)%7][0]}</div>`}).join("")}</div>`:empty("mic","No check-ins yet. Tell Mise about your day.",`<button class="pri gap" onclick="openDay()">How was your day?</button>`)}</div>
+ return `<div class="grid g2"><div class="card"><div class="ch"><h2>Productivity</h2><button class="lnk" onclick="openDay()">Check in</button></div>${ds.length?`<div class="eq"><div><b>${avg}</b><span>7-day average</span></div><i></i><div><b>${R(bn)}</b><span>kcal burned (7 days)</span></div><i></i><div><b>${ds.length}</b><span>Check-ins</span></div></div><div class="wk7 gap" style="height:90px">${last.map(d=>{const e=S.days[d];return `<div title="${d}"><i style="height:${e?Math.max(4,e.score*.8):2}%;${e?"background:"+scoreCol(e.score):"background:var(--bd)"}"></i>${DAYS[(new Date(d+"T00:00").getDay()+6)%7][0]}</div>`}).join("")}</div>`:empty("mic","No check-ins yet. Tell Setpoint about your day.",`<button class="pri gap" onclick="openDay()">How was your day?</button>`)}</div>
  <div class="card"><div class="ch"><h2>Past days</h2></div>${ds.slice(0,30).map(d=>{const e=S.days[d];return `<div class="item tap" onclick="openDay('${d}')"><span class="score" style="--p:${e.score};width:44px;height:44px" data-v="${e.score}"></span><div class="tx"><div class="t">${fd(d)}</div><div class="s">${esc(e.summary||e.text.slice(0,70))}</div></div><div class="r">${R(e.burn)}<span class="mut sm-t"> kcal</span></div></div>`}).join("")||`<p class="mut">Your check-ins will show here.</p>`}</div></div>`}
 
 /* ---- email sign-up (needs MAILERLITE_API_KEY on the server; hidden otherwise) ---- */
 const newsCard=()=>NEWS&&!S.subd?`<div class="card"><div class="ch"><h3>Stay in the loop</h3></div><p class="mut sm-t">Training and nutrition tips plus new features. Unsubscribe any time.</p><input id="nem" type="email" placeholder="you@example.com" value="${esc(S.email||"")}" style="width:100%;margin-bottom:8px"><label class="agree"><input type="checkbox" id="ncs"><span>Yes, email me tips and updates.</span></label><button class="pri wide" onclick="subscribe()">Subscribe</button></div>`:"";
-async function subscribe(){const em=v("nem").trim();if(!/^\S+@\S+\.\S+$/.test(em))return toast("Enter a valid email address");if(!$("ncs").checked)return toast("Tick the box to agree to emails");try{const r=await fetch("/api/subscribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:em,consent:true,website:""})}),j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||"HTTP "+r.status);S.subd=1;toast("Subscribed. Check your inbox","","check");go()}catch(e){toast("Couldn’t subscribe: "+String(e.message).slice(0,80))}}
+async function subscribe(){const em=v("nem").trim();if(!/^\S+@\S+\.\S+$/.test(em))return toast("Enter a valid email address");if(!$("ncs").checked)return toast("Tick the box to agree to emails");try{const r=await fetch(((window.MISE_CONFIG||{}).API_BASE||"").replace(/\/$/,"")+"/api/subscribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:em,consent:true,website:""})}),j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||"HTTP "+r.status);S.subd=1;toast("Subscribed. Check your inbox","","check");go()}catch(e){toast("Couldn’t subscribe: "+String(e.message).slice(0,80))}}
