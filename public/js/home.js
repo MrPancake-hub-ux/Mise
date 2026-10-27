@@ -6,7 +6,7 @@ function quests(){const td=TD(),t=tgt(),e=eaten(td),w=S.water[td]||0,wl=R(S.user
  {k:"kcal",t:"Land within 10% of your calories",d:R(e.k)+" / "+t.k+" kcal",done:!!S.aw["kc"+td],xp:XPV.kcal+" XP",go:"go('food')",ic:"target"},
  {k:"prot",t:"Hit your protein",d:R(e.p)+" / "+t.p+" g",done:!!S.aw["pr"+td],xp:XPV.protein+" XP",go:"go('food')",ic:"bolt"},
  {k:"water",t:"Drink your water",d:w+" / "+wl+" ml",done:w>=wl,xp:XPV.hydra+" XP",go:"drink(250)",ic:"drop"},
- {k:"train",t:"Finish a workout",d:S.hist.some(h=>h.d==td)?"Done today":S.run?"In progress":"Not yet",done:S.hist.some(h=>h.d==td),xp:XPV.finish+" XP + sets",go:"go('train')",ic:"dumbbell"},
+ {k:"train",t:"Finish a full workout",d:S.hist.some(h=>h.d==td&&hQual(h))?"Done today":S.hist.some(h=>h.d==td)?"Logged. A full one needs "+XPMIN.ex+" exercises and "+XPMIN.sets+" sets":S.run?"In progress":"Not yet",done:S.hist.some(h=>h.d==td&&hQual(h)),xp:XPV.finish+" XP + sets",go:"go('train')",ic:"dumbbell"},
  {k:"weigh",t:"Weigh in",d:S.wlog.some(x=>x.d==td)?"Logged":"Not yet",done:S.wlog.some(x=>x.d==td),xp:XPV.weigh+" XP",go:"go('prog')",ic:"scale"}]}
 const homeToday=()=>{const t=tgt(),td=TD(),e=eaten(td),left=t.k-e.k+burnOf(td),s=streak(),Q=quests(),qd=Q.filter(x=>x.done).length,m=dayMac(di(td)),pdi=di(td),
  wk=S.hist.filter(h=>Date.now()-new Date(h.d+"T00:00")<6048e5),wl=R(S.user.w*35),w=S.water[td]||0,
@@ -27,44 +27,44 @@ const homeToday=()=>{const t=tgt(),td=TD(),e=eaten(td),left=t.k-e.k+burnOf(td),s
  <div class="grid g3">
  <div class="card"><h3>Last 7 days</h3><div class="wk7">${days.map(x=>`<div><i style="height:${x.k/mx*80}%"></i>${x.w?ic("dumbbell",12):"·"}<br>${DAYS[(new Date(x.d+"T00:00").getDay()+6)%7]}</div>`).join("")}</div><p class="mut sm-t" style="margin:8px 0 0">${wk.length} workout${wk.length==1?"":"s"} this week</p></div>
  ${waterCard()}
- <div class="card"><h3>Your rank</h3><div class="row nw" style="cursor:pointer" onclick="openLevel()">${badge(rankIdx(),56,{label:rank().n,u:"hm"})}<div class="grow"><div class="b">${rank().n} · Level ${lvl()}</div><div class="bar2 thin gap"><div style="width:${rkPct()}%"></div></div><div class="mut sm-t">${nx?((nx.lv-1)*100-S.xp)+" XP to "+nx.n:"Top rank reached"}</div></div></div>${ev.length?`<div class="gap">${ev.map(x=>`<div class="mut sm-t">${ic("cal",13)} ${x.t?x.t+" · ":""}${esc(x.n)}</div>`).join("")}</div>`:""}</div></div>
+ <div class="card"><h3>Your rank</h3><div class="row nw" style="cursor:pointer" onclick="openLevel()">${avMe(60,rankIdx(),"hm")}<div class="grow"><div class="b">${rank().n} · Level ${lvl()}</div><div class="bar2 thin gap"><div style="width:${rkPct()}%"></div></div><div class="mut sm-t">${nx?(xpAt(nx.lv)-S.xp).toLocaleString()+" XP to "+nx.n:"Top rank reached"}</div></div></div><button class="soft wide gap" onclick="go('board')">${ic("trophy",16)} Friends and leaderboard</button>${ev.length?`<div class="gap">${ev.map(x=>`<div class="mut sm-t">${ic("cal",13)} ${x.t?x.t+" · ":""}${esc(x.n)}</div>`).join("")}</div>`:""}</div></div>
  ${newsCard()}<p class="mut tc sm-t">${esc(tipOf())}</p>`};
 
 /* ======================= LEVEL MODAL ======================= */
 function openLevel(){openModal(lvView)}
-function lvView(){const r=rank(),nx=RANKS[r.i+1],t=tier(),pc=prCount(),tr=AWD.filter(a=>S.aw[a[0]]).length,fdn=Object.keys(S.flog).filter(d=>(S.flog[d]||[]).length).length,xpIn=S.xp%100;
+function lvView(){const r=rank(),nx=RANKS[r.i+1],t=tier(),pc=prCount(),tr=AWD.filter(a=>S.aw[a[0]]).length,fdn=Object.keys(S.flog).filter(d=>(S.flog[d]||[]).length).length,lp=lvProg();
  const totV=R(S.hist.reduce((a,h)=>a+vol(h.sets),0));
- return mh("Your level")+`<div class="lvhero">${badge(r.i,112,{label:r.n,u:"lv"})}<div class="nm">${r.n}</div><div class="mut">${esc(r.t)}</div><div class="chip acc">Level ${lvl()}</div></div>
- <div class="gap"><div class="row nw" style="margin:0"><span class="mut sm-t">${xpIn} / 100 XP to level ${lvl()+1}</span><span class="grow"></span><span class="mut sm-t">${S.xp} XP total</span></div><div class="bar2"><div style="width:${xpIn}%"></div></div>${nx?`<p class="mut sm-t" style="margin:6px 0 0">${(nx.lv-1)*100-S.xp} XP until <b>${nx.n}</b> (level ${nx.lv})</p>`:`<p class="mut sm-t" style="margin:6px 0 0">You’ve reached the top rank.</p>`}</div>
+ return mh("Your level")+`<div class="lvhero"><div style="display:flex;justify-content:center;align-items:center;gap:14px">${badge(r.i,112,{label:r.n,u:"lv"})}${S.user.pic?avatar(S.user.pic,S.user.n,72):""}</div><div class="nm">${r.n}</div><div class="mut">${esc(r.t)}</div><div class="chip acc">Level ${lvl()}</div></div>
+ <div class="gap"><div class="row nw" style="margin:0"><span class="mut sm-t">${lp.have} / ${lp.need} XP to level ${lvl()+1}</span><span class="grow"></span><span class="mut sm-t">${S.xp} XP total</span></div><div class="bar2"><div style="width:${lp.pct}%"></div></div>${nx?`<p class="mut sm-t" style="margin:6px 0 0">${(xpAt(nx.lv)-S.xp).toLocaleString()} XP until <b>${nx.n}</b> (level ${nx.lv})</p>`:`<p class="mut sm-t" style="margin:6px 0 0">You’ve reached the top rank.</p>`}</div>
  <div class="statg"><div><b>${S.hist.length}</b><span>Workouts</span></div><div><b>${pc}</b><span>Personal records</span></div><div><b>${streak()}</b><span>Day streak</span></div><div><b>${bestStreak()}</b><span>Best streak</span></div><div><b>${fdn}</b><span>Days logged</span></div><div><b>${tr}/${AWD.length}</b><span>Trophies</span></div></div>
  ${totV?`<p class="mut sm-t tc" style="margin:0 0 10px">You’ve lifted ${totV.toLocaleString()} kg in total.</p>`:""}
  <div class="card flat tint"><div class="ch"><h3>Your perks: ${t.n}</h3></div><ul class="plist">${t.perks.map(x=>`<li>${ic("check",14)} ${x}</li>`).join("")}</ul><div class="mut sm-t">AI chats this hour: ${chatUsed()}/${t.chat} · Photo logs today: ${photoUsed()}/${t.photo}</div></div>
  <h3 class="gap">All ranks</h3><div class="ladder">${RANKS.map((k,i)=>`<div class="rkc ${i==r.i?"cur":""} ${i>r.i?"lock":""}">${badge(i,48,{lock:i>r.i,label:k.n,u:"ld"})}<b>${k.n}</b><small>Level ${k.lv}${i>r.i?" · locked":""}</small></div>`).join("")}</div>
- <div class="row gap"><button class="pri grow lg" onclick="closeModal();go('xp')">${ic("bolt",18)} How to earn XP</button><button class="grow lg" onclick="closeModal();go('prog')">${ic("chart",18)} Progress</button></div>`}
+ <div class="row gap"><button class="pri grow lg" onclick="closeModal();go('xp')">${ic("bolt",18)} How to earn XP</button><button class="grow lg" onclick="closeModal();go('board')">${ic("trophy",18)} Leaderboard</button><button class="grow lg" onclick="closeModal();go('prog')">${ic("chart",18)} Progress</button></div>`}
 
 /* ======================= EARN XP ======================= */
 const XPRULES=[
- ["dumbbell","Complete a set","set","Tick a set in a workout (counts once it’s done).",XPV.set,"up to "+XPV.setCap+" a day"],
+ ["dumbbell","Complete a set","set","Tick a working set in a workout. Warm-up sets don’t count.",XPV.set,"up to "+XPV.setCap+" a day"],
  ["trophy","Set a personal record","pr","Beat your best weight, 1RM, set volume, reps or hold.",XPV.pr,"up to "+XPV.prCap+" a day"],
- ["check","Finish a workout","fin","Press Finish and save the session.",XPV.finish,"each workout"],
- ["flame","Training streak","streak","Train on consecutive days. Each streak day adds XP.",XPV.streak,"up to "+XPV.streakCap+" a day"],
- ["food","Log food","food","Every item you add to your diary.",XPV.food,"up to "+XPV.foodCap+" a day"],
- ["target","Hit your calories","kcal","Finish within 10% of your daily calorie goal.",XPV.kcal,"once a day"],
- ["bolt","Hit your protein","prot","Reach 95% of your protein target.",XPV.protein,"once a day"],
- ["drop","Drink water","water","Each 250 ml you log.",XPV.water,"up to "+XPV.waterCap+" a day"],
+ ["check","Finish a full workout","fin","Finish a session with at least "+XPMIN.ex+" different exercises and "+XPMIN.sets+" completed sets (or a cardio session of "+XPMIN.cdKm+" km or "+XPMIN.cdMin+" minutes).",XPV.finish,"once a day"],
+ ["flame","Training streak","streak","Do a full workout on consecutive days. Each streak day adds XP.",XPV.streak,"up to "+XPV.streakCap+" a day"],
+ ["food","Log food","food","Every item of at least "+XPMIN.kcal+" kcal you add to your diary.",XPV.food,"up to "+XPV.foodCap+" a day"],
+ ["target","Hit your calories","kcal","Finish within 10% of your daily calorie goal, with at least "+XPMIN.food+" items logged.",XPV.kcal,"once a day"],
+ ["bolt","Hit your protein","prot","Reach 95% of your protein target, with at least "+XPMIN.food+" items logged.",XPV.protein,"once a day"],
+ ["drop","Drink water","water","Each drink of 150 ml or more.",XPV.water,"up to "+XPV.waterCap+" a day"],
  ["drop","Reach your water goal","hydra","Drink 35 ml per kg of body weight.",XPV.hydra,"once a day"],
  ["mic","Daily check-in","chk","Tell Setpoint how your day went (type or speak).",XPV.checkin,"once a day"],
  ["scale","Weigh in","weigh","Log your weight in Progress.",XPV.weigh,"once a day"],
  ["book","Save or create a recipe","rec","From Recipes or by building your own.",XPV.recipe,"up to "+XPV.recipeCap+" a day"],
- ["cal","Plan your week","plan","Use Plan with AI or Quick plan.",XPV.plan,"each plan"],
- ["layers","Create a prep batch","batch","In Meals → Meal prep.",XPV.batch,"each batch"],
- ["camera","Log from a photo","photo","Snap a meal and log it.",XPV.photo,"each photo"],
+ ["cal","Plan your week","plan","Use Plan with AI or Quick plan (at least 6 meals).",XPV.plan,"once a day"],
+ ["layers","Create a prep batch","batch","In Meals → Meal prep.",XPV.batch,"up to "+XPV.batchCap+" a day"],
+ ["camera","Log from a photo","photo","Snap a meal and log it.",XPV.photo,"up to "+XPV.photoCap+" a day"],
  ["cal","Add a calendar event","ev","From the calendar or the Coach.",XPV.event,"up to "+XPV.eventCap+" a day"],
  ["trophy","Unlock a trophy","tr","See the cabinet below.",XPV.trophy,"each trophy"]];
 V.xp=()=>{const r=rank(),nx=RANKS[r.i+1],got=AWD.filter(a=>S.aw[a[0]]).length;
- return `<div class="card tint"><div class="row nw">${badge(r.i,64,{label:r.n,u:"xh"})}<div class="grow"><div class="b" style="font-size:18px">${r.n} · Level ${lvl()}</div><div class="bar2 gap"><div style="width:${rkPct()}%"></div></div><div class="mut sm-t">${S.xp} XP · every 100 XP is a level${nx?" · "+((nx.lv-1)*100-S.xp)+" XP to "+nx.n:""}</div></div></div></div>
+ return `<div class="card tint"><div class="row nw">${avMe(64,r.i,"xh")}<div class="grow"><div class="b" style="font-size:18px">${r.n} · Level ${lvl()}</div><div class="bar2 gap"><div style="width:${rkPct()}%"></div></div><div class="mut sm-t">${S.xp.toLocaleString()} XP · each level needs a little more than the last${nx?" · "+(xpAt(nx.lv)-S.xp).toLocaleString()+" XP to "+nx.n:""}</div></div></div></div>
  <div class="card"><div class="ch"><h2>Ways to earn XP</h2></div><p class="mut sm-t">Some actions have a daily cap so progress comes from steady habits, not grinding.</p>${XPRULES.map(a=>`<div class="xprow"><span class="av ${a[4]>=20?"y":""}">${ic(a[0],20)}</span><div class="tx"><div class="t">${a[1]}</div><div class="s">${a[3]} <span class="mut">(${a[5]})</span></div></div><span class="xpv">+${a[4]}</span></div>`).join("")}</div>
- <div class="card"><div class="ch"><h2>Ranks</h2></div><div class="ladder">${RANKS.map((k,i)=>`<div class="rkc ${i==r.i?"cur":""} ${i>r.i?"lock":""}">${badge(i,52,{lock:i>r.i,label:k.n,u:"xr"})}<b>${k.n}</b><small>Level ${k.lv}</small><small class="mut">${(k.lv-1)*100} XP</small></div>`).join("")}</div></div>
+ <div class="card"><div class="ch"><h2>Ranks</h2></div><div class="ladder">${RANKS.map((k,i)=>`<div class="rkc ${i==r.i?"cur":""} ${i>r.i?"lock":""}">${badge(i,52,{lock:i>r.i,label:k.n,u:"xr"})}<b>${k.n}</b><small>Level ${k.lv}</small><small class="mut">${xpAt(k.lv).toLocaleString()} XP</small></div>`).join("")}</div></div>
  <div class="card"><div class="ch"><h2>Perks</h2></div><div class="tiers">${TO.map(k=>{const T=TIERS[k],on=k==curTier();return `<div class="tier ${on?"cur":""}"><div class="mut sm-t">From level ${T.lv}</div><h3>${T.n}</h3><ul>${T.perks.map(x=>`<li>${x}</li>`).join("")}</ul><span class="chip ${on?"sel":""}">${on?"Active":lvl()>=T.lv?"Unlocked":"Locked"}</span></div>`}).join("")}</div></div>
  <div class="card"><div class="ch"><h2>Trophy cabinet</h2><span class="chip">${got}/${AWD.length}</span></div><div>${AWD.map(a=>`<span class="bd ${S.aw[a[0]]?"":"off"}" title="${esc(a[3])}">${ic(a[1],26)}${esc(a[2])}</span>`).join("")}</div></div>`};
 

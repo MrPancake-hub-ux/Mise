@@ -32,7 +32,7 @@ function ensureF(n,k,p,c,f){if(!F(n))S.foods.push({n,k:+k||0,p:+p||0,c:+c||0,f:+
 const cpg=n=>{const o=F(n);if(!o)return 300;if(o.k>800)return 15;if(o.k>500)return 30;if(o.c>60&&o.p<1)return 25;if(o.k>300)return o.t=="c"?100:o.t=="p"?60:40;return o.t=="p"?300:o.t=="c"?350:250};
 const GR=["Rice (cooked)","Pasta (cooked)","Quinoa (cooked)","Couscous (cooked)","Rice noodles (cooked)"],PRO=["Chicken breast","Lean beef","Turkey mince","Pork tenderloin","Salmon","Cod","Prawns","Tofu","Tempeh","Tuna (canned)","Eggs"],ROA=["Sweet potato","Potato","Cauliflower","Broccoli","Zucchini","Bell pepper","Carrot","Onion","Mushrooms"],FRESH=["Avocado","Greek yogurt","Mixed greens","Cucumber","Tomato","Hummus","Feta","Parmesan","Cheddar","Banana","Berries"],SHORT=n=>n.replace(/ \(.*\)/,"").toLowerCase();
 function batchItems(b){const t={};b.meals.forEach(x=>scaled(MEALS[x]).i.forEach(i=>t[i.f]=(t[i.f]||0)+i.g*b.n));return Object.keys(t).map(f=>({f,g:t[f]}))}
-function mkBatch(ms,n){if(S.batches.length>=tier().batch)return null;n=Math.min(21,Math.max(1,n||5));const b={id:Date.now(),meals:ms,n};S.batches.push(b);S.xp+=15;return b}
+function mkBatch(ms,n){if(S.batches.length>=tier().batch)return null;n=Math.min(21,Math.max(1,n||5));const b={id:Date.now(),meals:ms,n};S.batches.push(b);gain(XPV.batch,"batch",XPV.batchCap);return b}
 const bTxt=b=>b.meals.map(x=>MEALS[x][0]).join(" + ")+" ×"+b.n;
 function bSteps(b){const ns=new Set(batchItems(b).map(i=>i.f)),has=l=>l.filter(n=>ns.has(n)),gr=has(GR),pr=has(PRO),ro=has(ROA),st=[];
 if(ro.length)st.push(`Heat the oven to 200°C. Chop ${ro.map(SHORT).join(", ")} and roast on trays for 25–30 minutes, tossing halfway.`);

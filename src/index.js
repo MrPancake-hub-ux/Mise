@@ -139,7 +139,7 @@ async function handleAI(req, env) {
   if (!b.text || String(b.text).length > 24000) return reply(env, { error: "Bad request", kind: "upstream" }, 400);
   if (b.img && b.img.length > 2500000) return reply(env, { error: "Image too large", kind: "upstream" }, 413);
   const isPhoto = !!b.img;
-  if (env.RATE) {
+  if (env.RATE) try {
     const ip = req.headers.get("CF-Connecting-IP") || "unknown";
     const day = new Date().toISOString().slice(0, 10);
     const key = isPhoto ? `p:${ip}:${day}` : `c:${ip}:${new Date().toISOString().slice(0, 13)}`;
@@ -153,6 +153,9 @@ async function handleAI(req, env) {
       if (gu >= +env.DAILY_TOTAL) return reply(env, { error: "The shared AI is busy today. Try again tomorrow.", kind: "limit" }, 429);
       await env.RATE.put(gk, String(gu + 1), { expirationTtl: 90000 });
     }
+  } catch (e) {
+    // The rate-limit store failed (for example Cloudflare's free KV daily write limit was reached).
+    // Let the request through instead of breaking the AI; your Google spend cap is the backstop.
   }
   const g = await generate(env, K.key, b, !!b.stream);
   if (g.err) return reply(env, { error: g.err.msg, kind: g.err.kind }, g.err.status === 429 ? 429 : g.err.status >= 400 && g.err.status < 600 ? g.err.status : 502);
@@ -201,13 +204,13 @@ async function handleSub(req, env) {
   const email = String(b.email || "").trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 120) return reply(env, { error: "Enter a valid email address." }, 400);
   if (b.consent !== true) return reply(env, { error: "Please agree to receive emails." }, 400);
-  if (env.RATE) {
+  if (env.RATE) try {
     const ip = req.headers.get("CF-Connecting-IP") || "unknown";
     const k = `s:${ip}:${new Date().toISOString().slice(0, 13)}`;
     const n = +((await env.RATE.get(k)) || 0);
     if (n >= 5) return reply(env, { error: "Too many sign-up attempts. Try again later." }, 429);
     await env.RATE.put(k, String(n + 1), { expirationTtl: 3700 });
-  }
+  } catch (e) {}
   const body = { email };
   if (env.MAILERLITE_GROUP_ID) body.groups = [env.MAILERLITE_GROUP_ID];
   const r = await fetch("https://connect.mailerlite.com/api/subscribers", {

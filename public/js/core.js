@@ -10,7 +10,7 @@ const DR=()=>[{id:1,name:"Upper body",ex:[{x:"Bench press",s:3},{x:"Barbell row"
 const QUOTES=["Small reps, big changes.","Prep today, thank yourself Thursday.","Progress is a habit, not a mood.","Strong is built between the sets."];
 
 /* ---------- state ---------- */
-let S=null,tab="home",sub={train:"workout",meals:"plan",prog:"body",me:"profile"},ed=null,ww=0,wm=new Date(),cm=new Date(),sd,li=1,draft={n:"",i:[]},mf="all",sv=4,armed=null,rest={t:0,iv:0},tg=[],mq="",lim=10,runMin=false;
+let S=null,tab="home",sub={train:"workout",meals:"plan",prog:"body",me:"profile",board:"friends"},ed=null,ww=0,wm=new Date(),cm=new Date(),sd,li=1,draft={n:"",i:[]},mf="all",sv=4,armed=null,rest={t:0,iv:0},tg=[],mq="",lim=10,runMin=false;
 const $=i=>document.getElementById(i),v=i=>{const e=$(i);return e?e.value:""},esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"),TD=()=>ymd(new Date());sd=TD();
 const jq=s=>esc(JSON.stringify(String(s))),R=n=>Math.round(n),cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
@@ -54,25 +54,35 @@ function mealOfTime(t){const h=+(String(t||"12:00").slice(0,2));return h<10?"b":
 function mk(u,o,h,sl,rm,id){S=Object.assign(blank(u),o||{});S.user=u;S.id=id||Date.now().toString(36);if(!id){const a=idx();a.push({id:S.id,n:u.n,h:h||"",s:sl||""});try{localStorage.setItem(K+"idx",JSON.stringify(a))}catch(e){}}S.rm=!!rm;fix();if(!o){seedStarter();S.seeded=1}lastJ="";save(true)}
 
 /* ---------- XP, levels, ranks ---------- */
-const XPV={set:10,setCap:250,pr:25,prCap:100,finish:20,streak:5,streakCap:25,food:3,foodCap:15,kcal:25,protein:15,water:5,waterCap:20,hydra:10,weigh:10,recipe:20,recipeCap:60,plan:30,batch:15,event:5,eventCap:15,photo:5,trophy:25,checkin:10};
+/* XP values. Every action has a daily cap so levels come from steady habits. A "real" workout needs XPMIN.ex different exercises and XPMIN.sets completed sets (or a proper cardio session). */
+const XPV={set:2,setCap:40,pr:10,prCap:30,finish:40,streak:5,streakCap:20,food:2,foodCap:12,kcal:15,protein:10,water:2,waterCap:12,hydra:8,weigh:5,recipe:8,recipeCap:24,plan:20,batch:10,batchCap:20,event:2,eventCap:6,photo:4,photoCap:12,trophy:25,checkin:8};
+const XPMIN={ex:3,sets:9,cdKm:2,cdMin:20,food:3,kcal:20};
+/* Level curve: level L needs 20*(L-1)*(L+3) total XP (L2=100, L3=240, L6=900, L10=2,340, L55=62,640). Each level costs 40 more XP than the one before. */
+const xpAt=L=>20*(L-1)*(L+3);
+const lvlOf=x=>{x=Math.max(0,+x||0);let n=Math.max(0,Math.floor(-2+Math.sqrt(4+x/20)));while(xpAt(n+2)<=x)n++;while(n>0&&xpAt(n+1)>x)n--;return n+1};
+const lvProg=()=>{const L=lvl(),a=xpAt(L),b=xpAt(L+1);return{have:S.xp-a,need:b-a,pct:Math.max(0,Math.min(100,Math.round((S.xp-a)/(b-a)*100)))}};
+/* a workout counts when it has enough different exercises and sets, or a real cardio session */
+function qualWk(sets,dur){const w=(sets||[]).filter(s=>s.ty!="W"),ex=new Set(w.map(s=>s.x)).size,cd=w.some(s=>s.k=="cd"&&((+s.w||0)>=XPMIN.cdKm||(+dur||0)>=XPMIN.cdMin));return cd||(ex>=XPMIN.ex&&w.length>=XPMIN.sets)}
+const hQual=h=>h&&(h.q!=null?!!h.q:qualWk(h.sets,h.dur));
 function gain(n,key,cap){if(key){const d=TD();if(!S.xd||S.xd.d!=d)S.xd={d};const u=S.xd[key]||0;n=Math.min(n,cap-u);if(n<=0)return 0;S.xd[key]=u+n}S.xp+=n;return n}
 function lose(n,key){if(key&&S.xd&&S.xd.d==TD())S.xd[key]=Math.max(0,(S.xd[key]||0)-n);S.xp=Math.max(0,S.xp-n)}
 const RANKS=[
 {n:"Initiate",lv:1,t:"Every legend starts with day one."},{n:"Challenger",lv:3,t:"You showed up. Now keep showing up."},{n:"Warrior",lv:6,t:"Discipline is taking shape."},{n:"Gladiator",lv:10,t:"Built for the arena of daily habits."},{n:"Spartan",lv:15,t:"Hard to break, harder to stop."},{n:"Titan",lv:21,t:"Strength you can see from a distance."},{n:"Olympian",lv:28,t:"Crowned by consistency."},{n:"Demigod",lv:36,t:"Half human, all habit."},{n:"Immortal",lv:45,t:"Your routine burns on its own."},{n:"Legend",lv:55,t:"The top of the mountain."}];
-const lvl=()=>(S.xp/100|0)+1,rankIdx=()=>{let r=0;RANKS.forEach((k,i)=>{if(lvl()>=k.lv)r=i});return r},rank=()=>Object.assign({i:rankIdx()},RANKS[rankIdx()]);
+const lvl=()=>lvlOf(S.xp),rankIdx=()=>{let r=0;RANKS.forEach((k,i)=>{if(lvl()>=k.lv)r=i});return r},rank=()=>Object.assign({i:rankIdx()},RANKS[rankIdx()]);
 const TIERS={free:{n:"Starter",lv:1,chat:50,photo:5,batch:1,perks:["50 AI chats per hour","5 photo logs per day","1 saved prep batch","Event reminders"]},plus:{n:"Boosted",lv:6,chat:100,photo:25,batch:99,perks:["100 AI chats per hour","25 photo logs per day","Unlimited prep batches","Meal, water and workout reminders"]},pro:{n:"Elite",lv:10,chat:200,photo:75,batch:99,perks:["200 AI chats per hour","75 photo logs per day","Weekly AI nutrition review"]}},TO=["free","plus","pro"];
 const curTier=()=>lvl()>=TIERS.pro.lv?"pro":lvl()>=TIERS.plus.lv?"plus":"free",tier=()=>TIERS[curTier()];
 const AWD=[["wk1","dumbbell","First workout","You logged your first workout. The journey starts here."],["wk5","dumbbell","5 workouts","Five workouts done. A habit is forming."],["wk10","dumbbell","10 workouts","Ten workouts completed. Strong work."],["wk25","dumbbell","25 workouts","Twenty-five workouts. You are consistent."],["wk50","trophy","50 workouts","Fifty workouts. Serious dedication."],["wk100","trophy","100 workouts","One hundred workouts. Legendary."],["pr1","trophy","First personal record","You set your first personal record."],["pr10","trophy","10 personal records","Ten personal records. You keep getting stronger."],["st3","flame","3-day streak","Three training days in a row."],["st7","flame","7-day streak","A full week of training in a row."],["st14","flame","14-day streak","Two weeks without a gap."],["st30","flame","30-day streak","A whole month in a row."],["st60","flame","60-day streak","Sixty days in a row. Unstoppable."],["st100","flame","100-day streak","One hundred days in a row."],["fl1","food","First food logged","Tracking what you eat is how progress is measured."],["fl7","food","7 days of food logs","A week of logging."],["fl30","food","30 days of food logs","A month of logging."],["ph1","camera","First photo log","Your first meal logged from a photo."],["ph10","camera","10 photo logs","Ten meals logged from photos."],["rc1","book","First recipe saved","Your cookbook has begun."],["rc10","book","10 recipes saved","A proper cookbook."],["pl","meals","Week planned","A full week of meals planned."],["bt","layers","First prep batch","Cook once, eat all week."],["w1","scale","Tracking started","Your first weigh-in is logged."],["w10","chart","10 weigh-ins","Ten data points. Now you can see a trend."],["goalW","target","Goal weight reached","You hit your goal weight."]];
 const prCount=()=>S.hist.reduce((a,h)=>a+h.sets.filter(s=>s.pr).length,0);
-function mset(){const n=S.hist.length,st=streak(),fdn=Object.keys(S.flog).filter(d=>(S.flog[d]||[]).length).length,m={},pc=prCount();[1,5,10,25,50,100].forEach(k=>m["wk"+k]=n>=k);[3,7,14,30,60,100].forEach(k=>m["st"+k]=st>=k);[1,7,30].forEach(k=>m["fl"+k]=fdn>=k);m.pr1=pc>=1;m.pr10=pc>=10;m.ph1=S.use.pt>=1;m.ph10=S.use.pt>=10;m.rc1=S.recipes.filter(r=>!r.auto).length>=1;m.rc10=S.recipes.filter(r=>!r.auto).length>=10;m.pl=Object.keys(S.plan).length>=14;m.bt=S.batches.length>=1;m.w1=S.wlog.length>=1;m.w10=S.wlog.length>=10;return m}
+function mset(){const n=S.hist.filter(hQual).length,st=streak(),fdn=Object.keys(S.flog).filter(d=>(S.flog[d]||[]).length).length,m={},pc=prCount();[1,5,10,25,50,100].forEach(k=>m["wk"+k]=n>=k);[3,7,14,30,60,100].forEach(k=>m["st"+k]=st>=k);[1,7,30].forEach(k=>m["fl"+k]=fdn>=k);m.pr1=pc>=1;m.pr10=pc>=10;m.ph1=S.use.pt>=1;m.ph10=S.use.pt>=10;m.rc1=S.recipes.filter(r=>!r.auto).length>=1;m.rc10=S.recipes.filter(r=>!r.auto).length>=10;m.pl=Object.keys(S.plan).length>=14;m.bt=S.batches.length>=1;m.w1=S.wlog.length>=1;m.w10=S.wlog.length>=10;return m}
 function chkTier(){S.aw=S.aw||{};const sil=!S.awInit,td=TD();
  const M=mset();AWD.forEach(a=>{if(M[a[0]]&&!S.aw[a[0]]){S.aw[a[0]]=1;if(!sil){S.xp+=XPV.trophy;award(a[2],a[3]+" +"+XPV.trophy+" XP","trophy:"+a[1])}}});
  const L=lvl(),ri=rankIdx();if(S.ll==null){S.ll=L;S.lr=ri}
  if(L>S.ll){const up=ri>S.lr;S.ll=L;S.lr=ri;if(!sil){if(up){const K_=RANKS[ri];award("Rank up: "+K_.n,"You reached level "+L+" and joined the "+K_.n+" rank."+(TO.some(k=>TIERS[k].lv==K_.lv&&K_.lv>1)?" New perks unlocked!":""),"rank:"+ri)}else{const nx=RANKS[ri+1];award("Level "+L+"!",nx?(nx.lv-L)+" more levels to "+nx.n+".":"You are at the top rank.","star")}}}
  const e=eaten(td),t=tgt();
- if(e.k>0&&e.p>=t.p*.95&&!S.aw["pr"+td]){S.aw["pr"+td]=1;if(!sil){gain(XPV.protein);cheer("Protein target hit today! +"+XPV.protein+" XP","bolt")}}
- if(e.k>=t.k*.9&&e.k<=t.k*1.1&&!S.aw["kc"+td]){S.aw["kc"+td]=1;if(!sil){gain(XPV.kcal);cheer("Calorie target reached today! +"+XPV.kcal+" XP","target")}}
+ if(entN(td)>=XPMIN.food&&e.k>0&&e.p>=t.p*.95&&!S.aw["pr"+td]){S.aw["pr"+td]=1;if(!sil){gain(XPV.protein);cheer("Protein target hit today! +"+XPV.protein+" XP","bolt")}}
+ if(entN(td)>=XPMIN.food&&e.k>=t.k*.9&&e.k<=t.k*1.1&&!S.aw["kc"+td]){S.aw["kc"+td]=1;if(!sil){gain(XPV.kcal);cheer("Calorie target reached today! +"+XPV.kcal+" XP","target")}}
  S.awInit=1}
+const entN=d=>(S.flog[d]||[]).filter(x=>x.k>=XPMIN.kcal).length;
 function streak(){let n=0,d=new Date();const s=new Set(S.hist.map(h=>h.d));if(!s.has(ymd(d)))d.setDate(d.getDate()-1);while(s.has(ymd(d))){n++;d.setDate(d.getDate()-1)}return n}
 function bestStreak(){const ds=[...new Set(S.hist.map(h=>h.d))].sort();let b=0,c=0,p=null;ds.forEach(d=>{c=p&&dAdd(p,1)==d?c+1:1;p=d;b=Math.max(b,c)});return b}
 
@@ -86,7 +96,7 @@ const isMinor=()=>S&&S.user.a<18;
 function dayMac(i){const r={k:0,p:0,c:0,f:0};SL.forEach(s=>{const rc=S.recipes.find(x=>x.id==S.plan[i+s]);if(rc){const m=mac(rc.i);for(const k in r)r[k]+=m[k]}});return r}
 const burnOf=d=>((S.days||{})[d]||{}).burn||0;
 const eaten=d=>{const r={k:0,p:0,c:0,f:0};(S.flog[d]||[]).forEach(e=>{r.k+=e.k;r.p+=e.p;r.c+=e.c;r.f+=e.f});return r};
-function logFood(e,d){d=d||TD();(S.flog[d]=S.flog[d]||[]).push({id:Date.now()+Math.random(),n:e.n,k:R(e.k),p:R(e.p),c:R(e.c),f:R(e.f),t:new Date().toTimeString().slice(0,5),mt:e.mt||mealOfTime(new Date().toTimeString().slice(0,5)),s:e.s||"manual"});gain(XPV.food,"food",XPV.foodCap)}
+function logFood(e,d){d=d||TD();(S.flog[d]=S.flog[d]||[]).push({id:Date.now()+Math.random(),n:e.n,k:R(e.k),p:R(e.p),c:R(e.c),f:R(e.f),t:new Date().toTimeString().slice(0,5),mt:e.mt||mealOfTime(new Date().toTimeString().slice(0,5)),s:e.s||"manual"});if(R(e.k)>=XPMIN.kcal)gain(XPV.food,"food",XPV.foodCap)}
 function body(){const u=S.user,bmi=u.w/((u.h/100)**2),bmr=bmrOf(u);return{bmi:R(bmi*10)/10,bmr:R(bmr),tdee:R(bmr*u.act),minor:u.a<18,p:R(u.w*2)}}
 const MS=m=>`<div class="mac"><span><b>${R(m.k)}</b> kcal</span><span>P <b>${R(m.p)}</b>g</span><span>C <b>${R(m.c)}</b>g</span><span>F <b>${R(m.f)}</b>g</span></div>`;
 

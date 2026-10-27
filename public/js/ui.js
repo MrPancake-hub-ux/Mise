@@ -45,15 +45,22 @@ const sel=(id,o,c,ex)=>`<select id="${id}" ${ex||""}>${o.map(a=>`<option value="
 const ring=(v_,mx,lab,u,col)=>{const C=2*Math.PI*34,p_=Math.min(1,mx?v_/mx:0);return `<div class="rg"><svg viewBox="0 0 90 90"><circle cx="45" cy="45" r="34" fill="none" stroke="var(--in)" stroke-width="9"/><circle cx="45" cy="45" r="34" fill="none" stroke="${v_>mx*1.1?"#e5484d":col}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(C*p_).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 45 45)" style="transition:stroke-dasharray .9s"/><text x="45" y="50" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor">${R(v_)}</text></svg>${lab}<br>of ${R(mx)}${u}</div>`};
 const macBar=(n,v_,mx,col)=>`<div class="mb"><span class="nm">${n}</span><div class="bar2 thin ${v_>mx*1.1?"over":""}"><div style="width:${Math.min(100,mx?v_/mx*100:0)}%;${col?"background:"+col:""}"></div></div><span class="nu">${R(v_)} / ${R(mx)} g</span></div>`;
 const empty=(icn,t,btn)=>`<div class="empty">${ic(icn,30)}<div>${t}</div>${btn||""}</div>`;
-const rkPct=()=>{const r=rank(),nx=RANKS[r.i+1];return nx?Math.round(Math.max(0,Math.min(100,(S.xp-(r.lv-1)*100)/((nx.lv-r.lv)*100)*100))):100};
-const rkBtn=()=>{const r=rank();return `<button class="lvlbtn" onclick="openLevel()" aria-label="Your level and rank: ${r.n}, level ${lvl()}"><span class="rgw" style="--p:${rkPct()}">${badge(r.i,26,{label:r.n,u:"tb"})}</span><span class="lt">${r.n}<b>Level ${lvl()}</b></span></button>`};
+/* ---- profile pictures: small JPEGs (112 px) kept in S.user.pic; letter circle when there is none ---- */
+const AVC=["#5b4bff","#12b886","#e8590c","#0a84ff","#d6336c","#7b6cf6","#2b8a3e","#c2255c"];
+const PICRE=/^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/;
+const avatar=(pic,name,sz)=>{sz=sz||40;const n=String(name||"?").trim(),ch=(n[0]||"?").toUpperCase(),c=AVC[[...n].reduce((a,x)=>a+x.charCodeAt(0),0)%AVC.length];
+ return pic&&pic.length<20000&&PICRE.test(pic)?`<img class="avt" src="${pic}" alt="" style="width:${sz}px;height:${sz}px">`:`<span class="avt" style="width:${sz}px;height:${sz}px;background:${c};font-size:${Math.round(sz*.46)}px" aria-hidden="true">${esc(ch)}</span>`};
+const avRank=(pic,name,sz,ri,u)=>`<span class="avw" style="width:${sz}px;height:${sz}px">${avatar(pic,name,sz)}<span class="avr">${badge(ri,Math.max(18,Math.round(sz*.5)),{u:"av"+(u||"")})}</span></span>`;
+const avMe=(sz,ri,u)=>avRank(S.user.pic,S.user.n,sz,ri,u);
+const rkPct=()=>{const r=rank(),nx=RANKS[r.i+1];return nx?Math.round(Math.max(0,Math.min(100,(S.xp-xpAt(r.lv))/(xpAt(nx.lv)-xpAt(r.lv))*100))):100};
+const rkBtn=()=>{const r=rank();return `<button class="lvlbtn" onclick="openLevel()" aria-label="Your level and rank: ${r.n}, level ${lvl()}"><span class="rgw" style="--p:${rkPct()}">${S.user.pic?avatar(S.user.pic,S.user.n,30):badge(r.i,26,{label:r.n,u:"tb"})}</span><span class="lt">${r.n}<b>Level ${lvl()}</b></span></button>`};
 function applyTheme(){const r=document.documentElement,t=(S&&S.theme)||{};r.style.setProperty("--ac",t.ac||"");r.style.setProperty("--ac2",t.ac2||"");if(t.mode&&t.mode!="auto")r.dataset.theme=t.mode;else delete r.dataset.theme}
 function th(){const o=["auto","light","dark"];S.theme.mode=o[(o.indexOf(S.theme.mode)+1)%3];toast("Theme: "+S.theme.mode);go()}
 
 /* ---------- navigation ---------- */
 const NAV=[["home","Today","home"],["food","Food","food"],["train","Train","dumbbell"],["meals","Meals","meals"],["shop","Shop","cart"],["coach","Coach","sparkles"]];
-const SIDE=[["prog","Progress","chart"],["xp","Earn XP","bolt"],["me","Profile","user"]];
-const TITLES={home:"Today",food:"Food diary",meals:"Meals",shop:"Shopping",train:"Workouts",coach:"Coach",prog:"Progress",xp:"How to earn XP",me:"Profile and settings"};
+const SIDE=[["prog","Progress","chart"],["xp","Earn XP","bolt"],["board","Leaderboard","trophy"],["me","Profile","user"]];
+const TITLES={home:"Today",food:"Food diary",meals:"Meals",shop:"Shopping",train:"Workouts",coach:"Coach",prog:"Progress",xp:"How to earn XP",board:"Leaderboard",me:"Profile and settings"};
 const ROUTE={prep:["meals","prep"],log:["food"],cal:["home","cal"],plan:["meals","plan"],chat:["coach"]};
 let pTab="",pSub="";
 function go(t,s){let nav=false;if(t){const m=ROUTE[t];if(m){t=m[0];s=s||m[1]}if(t!=tab||(s&&sub[t]!=s))nav=true;tab=t;if(s)sub[t]=s;if(t=="train"&&S&&S.run)runMin=false}
@@ -64,7 +71,7 @@ function go(t,s){let nav=false;if(t){const m=ROUTE[t];if(m){t=m[0];s=s||m[1]}if(
  window.scrollTo(0,nav?0:y);
  pTab=tab;pSub=sub[tab];
  if(tab=="coach"){const c=$("ch");if(c)c.scrollTop=c.scrollHeight}
- if(typeof after=="function")after();save()}
+ if(typeof after=="function")after();save();if(typeof soQueue=="function")soQueue()}
 const subs=(cur,list,fn)=>`<div class="seg" role="tablist">${list.map(a=>`<button class="${cur==a[0]?"on":""}" role="tab" aria-selected="${cur==a[0]}" onclick="${fn}('${a[0]}')">${a[1]}</button>`).join("")}</div>`;
 function shell(main){const wip=S.run&&(tab!="train"||runMin);
  const nb=(a,cls)=>`<button class="${cls} ${tab==a[0]?"on":""}" onclick="go('${a[0]}')" aria-label="${a[1]}" ${tab==a[0]?'aria-current="page"':""}>${ic(a[2],cls=="nv"?20:23)}<span>${a[1]}</span></button>`;
@@ -74,4 +81,4 @@ function shell(main){const wip=S.run&&(tab!="train"||runMin);
  <nav class="bnav" aria-label="Main">${NAV.map(a=>nb(a,"bn")).join("")}</nav></div>`}
 const runClock=()=>{if(!S||!S.run)return"0:00";const s=Math.max(0,Math.floor((Date.now()-S.run.t)/1e3)),h=Math.floor(s/3600),m=Math.floor(s%3600/60);return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(s%60).padStart(2,"0")};
 setInterval(()=>{if(!S||!S.run)return;const t=runClock();["wipt","wot"].forEach(i=>{const e=$(i);if(e)e.textContent=t})},1000);
-function openMore(){openModal(()=>mh("More")+`<div class="menu">${[["prog","Progress","chart"],["xp","How to earn XP","bolt"],["me","Profile and settings","user"]].map(a=>`<button onclick="closeModal();go('${a[0]}')">${ic(a[2],22)}${a[1]}</button>`).join("")}<button onclick="closeModal();go('home','cal')">${ic("cal",22)}Calendar</button><button onclick="closeModal();go('me','legal')">${ic("shield",22)}Privacy, terms and health notice</button><button onclick="th();repaintModal()">${ic("contrast",22)}Theme: ${S.theme.mode} (tap to change)</button><button class="dg" onclick="closeModal();logout()">${ic("logout",22)}Log out</button></div>`)}
+function openMore(){openModal(()=>mh("More")+`<div class="menu">${[["prog","Progress","chart"],["board","Leaderboard","trophy"],["xp","How to earn XP","bolt"],["me","Profile and settings","user"]].map(a=>`<button onclick="closeModal();go('${a[0]}')">${ic(a[2],22)}${a[1]}</button>`).join("")}<button onclick="closeModal();go('home','cal')">${ic("cal",22)}Calendar</button><button onclick="closeModal();go('me','legal')">${ic("shield",22)}Privacy, terms and health notice</button><button onclick="th();repaintModal()">${ic("contrast",22)}Theme: ${S.theme.mode} (tap to change)</button><button class="dg" onclick="closeModal();logout()">${ic("logout",22)}Log out</button></div>`)}

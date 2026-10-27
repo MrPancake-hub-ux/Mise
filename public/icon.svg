@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><title>Setpoint</title><rect width="1024" height="1024" rx="230" fill="#000"/><g transform="translate(13.8 46.7) scale(2.35)"><path d="M207 376 C165 372 138 335 172 308 C212 278 278 285 278 238 C278 190 185 200 148 160 C125 134 160 100 198 100 C218 100 225 92 225 75 L225 40" fill="none" stroke="#f4f4f4" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><title>Setpoint</title><rect width="1024" height="1024" rx="230" fill="#000"/><g transform="translate(31.1 53.6) scale(2.3)"><path d="M207 376 C165 372 138 335 172 308 C212 278 278 285 278 238 C278 190 185 200 148 160 C125 134 160 100 198 100 C218 100 225 92 225 75 L225 40" fill="none" stroke="#f4f4f4" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="207" cy="376" r="15" fill="#d7d7d7"/>
 <path d="M221 10 L259 28 L221 46 Z" fill="#ffd60a" stroke="#ffd60a" stroke-width="6" stroke-linejoin="round"/>
 <g fill="none" stroke="#0a84ff" stroke-width="19" stroke-linecap="round" stroke-linejoin="round">
@@ -7,4 +7,5 @@
 <path d="M205 190 L228 187 L232 164"/>
 <path d="M189 226 L173 254 L165 276"/>
 <path d="M191 226 L222 216 L220 252"/></g>
-<circle cx="197" cy="155" r="17" fill="#0a84ff"/></g></svg>
+<circle cx="197" cy="155" r="17" fill="#0a84ff"/>
+</g></svg>
